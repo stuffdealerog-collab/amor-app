@@ -15,6 +15,7 @@ import { SettingsScreen } from "@/components/amor/settings-screen"
 import { ShopScreen } from "@/components/amor/shop-screen"
 import { QuestsScreen } from "@/components/amor/quests-screen"
 import { EditProfileScreen } from "@/components/amor/edit-profile-screen"
+import { PwaInstallPrompt } from "@/components/amor/pwa-install-prompt"
 import { useAuthStore } from "@/lib/stores/auth"
 import { useProfileStore } from "@/lib/stores/profile"
 import { usePresenceStore } from "@/lib/stores/presence"
@@ -146,6 +147,7 @@ export default function AmorApp() {
       {showShop && <ShopScreen onClose={() => setShowShop(false)} />}
       {showQuests && <QuestsScreen onClose={() => setShowQuests(false)} />}
       {showEditProfile && <EditProfileScreen onClose={() => setShowEditProfile(false)} />}
+      <PwaInstallPrompt />
     </div>
   )
 }
