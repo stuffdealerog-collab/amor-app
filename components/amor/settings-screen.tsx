@@ -8,6 +8,18 @@ import { useAuthStore } from "@/lib/stores/auth"
 import { useProfileStore } from "@/lib/stores/profile"
 import { useMatchStore } from "@/lib/stores/match"
 import { useChatStore } from "@/lib/stores/chat"
+import { createClient } from "@/lib/supabase/client"
+
+function urlB64ToUint8Array(base64String: string) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4)
+  const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/')
+  const rawData = window.atob(base64)
+  const outputArray = new Uint8Array(rawData.length)
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i)
+  }
+  return outputArray
+}
 
 interface SettingsScreenProps {
   onClose: () => void
@@ -33,6 +45,81 @@ export function SettingsScreen({ onClose, onLogout, onOpenEdit }: SettingsScreen
 
   const activeChatsCount = chats.length
   const matchCount = matches.length
+
+  const [pushEnabled, setPushEnabled] = useState(false)
+  const [pushLoading, setPushLoading] = useState(true)
+
+  useEffect(() => {
+    // Check initial push subscription status
+    async function checkSub() {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        setPushLoading(false)
+        return
+      }
+      const reg = await navigator.serviceWorker.ready
+      const sub = await reg.pushManager.getSubscription()
+      setPushEnabled(!!sub)
+      setPushLoading(false)
+    }
+    checkSub()
+  }, [])
+
+  const handleTogglePush = async () => {
+    if (!user) return
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      alert("Ваш браузер или ОС не поддерживают Push-уведомления (iOS: добавьте на экран Домой).")
+      return
+    }
+
+    try {
+      setPushLoading(true)
+      const reg = await navigator.serviceWorker.ready
+      let sub = await reg.pushManager.getSubscription()
+      const supabase = createClient()
+
+      if (sub) {
+        // Unsubscribe
+        const endpoint = sub.endpoint
+        await sub.unsubscribe()
+        await supabase.from('push_subscriptions').delete().match({ user_id: user.id, endpoint: endpoint })
+        setPushEnabled(false)
+      } else {
+        // Subscribe
+        const permission = await Notification.requestPermission()
+        if (permission !== 'granted') {
+          alert('Вы не дали разрешение на уведомления.')
+          setPushLoading(false)
+          return
+        }
+
+        const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+        if (!vapidKey) throw new Error("VAPID key missing")
+
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlB64ToUint8Array(vapidKey)
+        })
+
+        const p256dh = sub.getKey('p256dh') ? btoa(String.fromCharCode(...new Uint8Array(sub.getKey('p256dh')!))) : ''
+        const auth = sub.getKey('auth') ? btoa(String.fromCharCode(...new Uint8Array(sub.getKey('auth')!))) : ''
+
+        if (!p256dh || !auth) throw new Error("Missing keys in subscription")
+
+        await supabase.from('push_subscriptions').upsert({
+          user_id: user.id,
+          endpoint: sub.endpoint,
+          p256dh_key: p256dh,
+          auth_key: auth
+        } as any)
+        setPushEnabled(true)
+      }
+    } catch (e) {
+      console.error('[WebPush] Error toggling:', e)
+      alert('Ошибка настройки уведомлений: ' + (e as Error).message)
+    } finally {
+      setPushLoading(false)
+    }
+  }
 
   const handleDeleteAccount = async () => {
     if (!user || !profile) return
@@ -169,9 +256,17 @@ export function SettingsScreen({ onClose, onLogout, onOpenEdit }: SettingsScreen
                 <Bell className="h-[18px] w-[18px] text-foreground" />
                 <span className="text-[14px] font-bold text-foreground">Уведомления</span>
               </div>
-              <div className={cn("relative flex h-6 w-11 items-center rounded-full transition-all bg-amor-cyan")}>
-                <div className="absolute h-[18px] w-[18px] rounded-full bg-white left-[22px] shadow-sm" />
-              </div>
+              <button
+                onClick={handleTogglePush}
+                disabled={pushLoading}
+                className={cn(
+                  "relative flex h-6 w-11 items-center rounded-full transition-all flex-shrink-0 focus:outline-none",
+                  pushEnabled ? "bg-amor-cyan" : "bg-white/10",
+                  pushLoading && "opacity-50 cursor-not-allowed grayscale"
+                )}
+              >
+                <div className={cn("absolute h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-all", pushEnabled ? "left-[22px]" : "left-[3px]")} />
+              </button>
             </div>
             <div className="p-3.5">
               <div className="flex items-center gap-2.5">

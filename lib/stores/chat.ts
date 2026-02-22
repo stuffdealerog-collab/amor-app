@@ -5,6 +5,7 @@ import { create } from 'zustand'
 import { createClient } from '@/lib/supabase/client'
 import { compressImage } from '@/lib/compress-image'
 import { sanitizeMessage } from '@/lib/sanitize'
+import { useProfileStore } from './profile'
 import type { Database } from '@/lib/supabase/database.types'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 
@@ -244,6 +245,20 @@ export const useChatStore = create<ChatState>((set, get) => ({
       if (error) {
         console.warn('[chat] sendMessage error:', error.message)
         set(s => ({ activeMessages: s.activeMessages.filter(m => m.id !== tempId) }))
+      } else {
+        // Find the receiver to send a push notification
+        const chat = get().chats.find(c => c.match.id === matchId)
+        if (chat && chat.otherProfile) {
+          const myName = useProfileStore.getState().profile?.name || 'Amor'
+          supabase.functions.invoke('send-push', {
+            body: {
+              targetUserId: chat.otherProfile.id,
+              title: `Сообщение от ${myName} 💬`,
+              body: clean,
+              url: "/chat"
+            }
+          }).catch(err => console.warn('[push] failed chat push:', err))
+        }
       }
     } catch (e) {
       console.warn('[chat] sendMessage exception:', e)
@@ -269,6 +284,21 @@ export const useChatStore = create<ChatState>((set, get) => ({
         content: '📷 Фото', type: 'image', media_url: urlData.publicUrl,
       })
       if (error) return { error: error.message }
+
+      // Dispatch push notification
+      const chat = get().chats.find(c => c.match.id === matchId)
+      if (chat && chat.otherProfile) {
+        const myName = useProfileStore.getState().profile?.name || 'Amor'
+        supabase.functions.invoke('send-push', {
+          body: {
+            targetUserId: chat.otherProfile.id,
+            title: `Фото от ${myName} 📷`,
+            body: 'Пользователь отправил вам фото!',
+            url: "/chat"
+          }
+        }).catch(err => console.warn('[push] failed chat push:', err))
+      }
+
       return { error: null }
     } catch (e: any) {
       return { error: e?.message ?? 'Ошибка отправки фото' }
@@ -293,6 +323,21 @@ export const useChatStore = create<ChatState>((set, get) => ({
         content: '🎤 Голосовое', type: 'voice', media_url: urlData.publicUrl,
       })
       if (error) return { error: error.message }
+
+      // Dispatch push notification
+      const chat = get().chats.find(c => c.match.id === matchId)
+      if (chat && chat.otherProfile) {
+        const myName = useProfileStore.getState().profile?.name || 'Amor'
+        supabase.functions.invoke('send-push', {
+          body: {
+            targetUserId: chat.otherProfile.id,
+            title: `Голосовое от ${myName} 🎤`,
+            body: 'Пользователь отправил вам голосовое сообщение!',
+            url: "/chat"
+          }
+        }).catch(err => console.warn('[push] failed chat push:', err))
+      }
+
       return { error: null }
     } catch (e: any) {
       return { error: e?.message ?? 'Ошибка отправки голосового' }

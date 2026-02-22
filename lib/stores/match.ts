@@ -138,6 +138,18 @@ export const useMatchStore = create<MatchState>((set, get) => ({
         return
       }
 
+      // If it's a regular like, send a mysterious notification
+      if (action === 'like') {
+        supabase.functions.invoke('send-push', {
+          body: {
+            targetUserId: swipedId,
+            title: "Новая симпатия! ✨",
+            body: "Кому-то понравился ваш вайб. Зайдите посмотреть!",
+            url: "/vibe"
+          }
+        }).catch(err => console.warn('[push] failed to send like push:', err))
+      }
+
       // Match is now created server-side by DB trigger on mutual like.
       // After swipe insert, check if a match was created.
       if (action === 'like' || action === 'superlike') {
@@ -158,6 +170,16 @@ export const useMatchStore = create<MatchState>((set, get) => ({
 
           if (other) {
             set({ newMatch: { ...match, otherProfile: other } })
+
+            // Notify the other user about the mutual match
+            supabase.functions.invoke('send-push', {
+              body: {
+                targetUserId: swipedId,
+                title: "Взаимный Мэтч! 💖",
+                body: "У вас совпадение вайба! Напишите первое сообщение 💌",
+                url: "/chat"
+              }
+            }).catch(err => console.warn('[push] failed to send match push:', err))
           }
         }
       }

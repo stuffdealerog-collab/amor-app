@@ -105,6 +105,21 @@ export interface Database {
         }
         Update: Partial<Database['public']['Tables']['swipes']['Insert']>
       }
+      push_subscriptions: {
+        Row: {
+          id: string
+          user_id: string
+          endpoint: string
+          auth_key: string
+          p256dh_key: string
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['push_subscriptions']['Row'], 'id' | 'created_at'> & {
+          id?: string
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['push_subscriptions']['Insert']>
+      }
       matches: {
         Row: {
           id: string

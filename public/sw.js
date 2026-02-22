@@ -98,3 +98,48 @@ self.addEventListener('fetch', (event) => {
       })
   )
 })
+
+// === Web Push Notifications ===
+
+self.addEventListener('push', (event) => {
+  if (!event.data) return
+
+  try {
+    const data = event.data.json()
+    const options = {
+      body: data.body,
+      icon: data.icon || '/images/amor-icon-pwa.png',
+      badge: '/images/amor-icon-pwa.png',
+      vibrate: [200, 100, 200],
+      data: { url: data.url || '/' }
+    }
+
+    event.waitUntil(
+      self.registration.showNotification(data.title || 'Amor', options)
+    )
+  } catch (err) {
+    console.error('[Web Push] error capturing data:', err)
+  }
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+
+  const urlToOpen = new URL(event.notification.data?.url || '/', self.location.origin).href
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // Focus existing app if open
+      for (let i = 0; i < windowClients.length; i++) {
+        const client = windowClients[i]
+        if (client.url === urlToOpen && 'focus' in client) {
+          return client.focus()
+        }
+      }
+      // Otherwise open the app
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(urlToOpen)
+      }
+    })
+  )
+})
