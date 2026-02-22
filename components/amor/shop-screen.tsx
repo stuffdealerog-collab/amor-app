@@ -186,7 +186,7 @@ export function ShopScreen({ onClose }: ShopScreenProps) {
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-background anim-slide-up">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 shrink-0" style={{ paddingTop: "calc(var(--sat) + 12px)" }}>
         <div className="flex items-center gap-3">
           <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-xl glass active:scale-95 transition-all">
             <ChevronLeft className="h-5 w-5 text-foreground" />

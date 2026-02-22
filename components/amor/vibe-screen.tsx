@@ -128,7 +128,7 @@ export function VibeScreen() {
 
   if (loading && !cards.length) {
     return (
-      <div className="flex h-[100dvh] flex-col items-center justify-center bg-background pt-14">
+      <div className="flex h-[100dvh] flex-col items-center justify-center bg-background" style={{ paddingTop: "var(--topbar-h)" }}>
         <Loader2 className="h-8 w-8 text-amor-pink animate-spin mb-4" />
         <p className="text-sm text-muted-foreground">Ищем людей...</p>
       </div>
@@ -137,7 +137,7 @@ export function VibeScreen() {
 
   if (!card) {
     return (
-      <div className="flex h-[100dvh] flex-col items-center justify-center px-8 bg-background text-center pt-14">
+      <div className="flex h-[100dvh] flex-col items-center justify-center px-8 bg-background text-center" style={{ paddingTop: "var(--topbar-h)" }}>
         <div className="flex h-20 w-20 items-center justify-center rounded-3xl glass mb-6 anim-float-gentle">
           <Heart className="h-8 w-8 text-amor-pink" />
         </div>
@@ -155,7 +155,7 @@ export function VibeScreen() {
   const hasPhotos = photos.length > 0
 
   return (
-    <div className="flex h-[100dvh] flex-col pt-14 bg-background overflow-hidden">
+    <div className="flex h-[100dvh] flex-col bg-background overflow-hidden" style={{ paddingTop: "var(--topbar-h)" }}>
       <div className="flex items-center justify-between px-4 py-2.5 shrink-0">
         <div>
           <h2 className="text-[17px] font-black text-foreground leading-tight">Vibe Matching</h2>

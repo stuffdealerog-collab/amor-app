@@ -12,9 +12,8 @@ export function TopBar({ onOpenNotifications }: TopBarProps) {
   const unreadCount = useNotificationsStore(s => s.unreadCount)
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40">
+    <header className="fixed top-0 left-0 right-0 z-40" style={{ paddingTop: "var(--sat)" }}>
       <div className="mx-auto max-w-md">
-        <div className="safe-top" />
         <div className="flex h-14 items-center justify-between px-4 bg-gradient-to-b from-background via-background/80 to-transparent">
           <Image
             src="/images/amor-logo.png"

@@ -234,7 +234,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
         <div className="absolute -bottom-32 -left-32 h-64 w-64 bg-amor-purple/5 rounded-full blur-[100px]" />
       </div>
 
-      <div className="flex items-center gap-3 px-5 pt-4 pb-3 shrink-0 relative z-10">
+      <div className="flex items-center gap-3 px-5 pb-3 shrink-0 relative z-10" style={{ paddingTop: "calc(var(--sat) + 16px)" }}>
         {step > 1 && (
           <button onClick={handleBack} className="flex h-9 w-9 items-center justify-center rounded-xl glass active:scale-95 transition-all">
             <ChevronLeft className="h-[18px] w-[18px] text-foreground" />

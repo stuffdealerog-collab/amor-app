@@ -20,7 +20,8 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
   const chatUnread = useChatStore(s => s.getTotalUnread())
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50" role="navigation" aria-label="Main navigation">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl" role="navigation" aria-label="Main navigation"
+      style={{ paddingBottom: "var(--sab)" }}>
       <div className="mx-auto max-w-md px-3">
         <div className="flex items-center rounded-2xl glass-strong overflow-hidden mb-1">
           {tabs.map((tab) => {
@@ -61,7 +62,6 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
             )
           })}
         </div>
-        <div className="safe-bottom" />
       </div>
     </nav>
   )

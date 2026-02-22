@@ -48,8 +48,8 @@
   --amor-glass-light: rgba(255, 255, 255, 0.04);
   --amor-glass-border: rgba(255, 255, 255, 0.06);
 
-  --topbar-h: 56px;
-  --bottomnav-h: 68px;
+  --topbar-h: calc(56px + env(safe-area-inset-top, 0px));
+  --bottomnav-h: calc(68px + env(safe-area-inset-bottom, 0px));
   --screen-px: 16px;
   --card-r: 20px;
   --card-r-lg: 24px;
@@ -132,8 +132,10 @@
 
 /* ── Safe Area ────────────────────────────── */
 
-.safe-top { height: env(safe-area-inset-top, 0px); }
-.safe-bottom { height: env(safe-area-inset-bottom, 0px); }
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+}
 
 /* ── Layout Utilities ─────────────────────── */
 

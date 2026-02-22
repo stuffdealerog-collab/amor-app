@@ -116,7 +116,7 @@ function UserPreviewModal({ user: u, onClose }: { user: Profile; onClose: () => 
 
   return (
     <div className="fixed inset-0 z-[150] flex flex-col bg-background anim-slide-up">
-      <div className="flex items-center justify-between px-4 pt-4 pb-3 shrink-0">
+      <div className="flex items-center justify-between px-4 pb-3 shrink-0" style={{ paddingTop: "calc(var(--sat) + 16px)" }}>
         <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-xl glass active:scale-95 transition-all">
           <ChevronLeft className="h-[18px] w-[18px] text-foreground" />
         </button>
@@ -366,7 +366,7 @@ export function ChatScreen({ onOpenQuests }: ChatScreenProps) {
 
     return (
       <div className="fixed inset-0 z-[60] flex flex-col bg-background anim-fade-in">
-        <div className="flex items-center justify-between px-3 py-2 shrink-0 border-b border-white/5 bg-background">
+        <div className="flex items-center justify-between px-3 py-2 shrink-0 border-b border-white/5 bg-background" style={{ paddingTop: "calc(var(--sat) + 8px)" }}>
           <div className="flex items-center gap-2.5">
             <button onClick={closeChat} className="flex h-9 w-9 items-center justify-center rounded-xl glass active:scale-95 transition-all">
               <ChevronLeft className="h-5 w-5 text-foreground" />
@@ -399,7 +399,7 @@ export function ChatScreen({ onOpenQuests }: ChatScreenProps) {
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="px-3 pb-3 pt-1.5 bg-background shrink-0 border-t border-white/5">
+        <div className="px-3 pt-1.5 bg-background shrink-0 border-t border-white/5" style={{ paddingBottom: "calc(var(--sab) + 12px)" }}>
           {chatError && <p className="text-[10px] text-destructive text-center mb-1.5 anim-fade-up">{chatError}</p>}
           <div className="flex items-center gap-1 justify-center mb-1.5 opacity-30">
             <ShieldCheck className="h-2.5 w-2.5 text-amor-cyan" />
@@ -448,7 +448,7 @@ export function ChatScreen({ onOpenQuests }: ChatScreenProps) {
   }
 
   return (
-    <div className="flex h-[100dvh] flex-col px-4 pt-14 bg-background">
+    <div className="flex h-[100dvh] flex-col px-4 bg-background" style={{ paddingTop: "var(--topbar-h)" }}>
       <div className="py-3 shrink-0"><h2 className="text-[17px] font-black text-foreground">Чаты</h2></div>
       <div className="flex-1 overflow-y-auto pb-20">
         <div className="mb-4 rounded-2xl glass glow-inner-pink p-4 border border-amor-pink/15 anim-fade-up">

@@ -59,7 +59,7 @@ export function ProfileScreen({ onOpenSettings, onOpenShop, onOpenEdit }: Profil
   const photoCount = profile.photos?.length ?? 0
 
   return (
-    <div className="flex h-[100dvh] flex-col pt-14 bg-background overflow-y-auto">
+    <div className="flex h-[100dvh] flex-col bg-background overflow-y-auto" style={{ paddingTop: "var(--topbar-h)" }}>
       <div className="relative shrink-0">
         {profile.banner_url && !profile.banner_url.startsWith("preset:") ? (
           <div className="h-36 relative">

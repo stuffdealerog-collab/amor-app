@@ -251,7 +251,7 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-background anim-slide-up">
-      <div className="flex items-center justify-between px-4 pt-4 pb-3 shrink-0 border-b border-white/5">
+      <div className="flex items-center justify-between px-4 pb-3 shrink-0 border-b border-white/5" style={{ paddingTop: "calc(var(--sat) + 16px)" }}>
         <button
           onClick={section === "main" ? onClose : () => setSection("main")}
           className="flex h-9 w-9 items-center justify-center rounded-xl glass active:scale-95 transition-all"

@@ -45,7 +45,7 @@ export function QuestsScreen({ onClose }: QuestsScreenProps) {
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-background anim-slide-up">
-      <div className="px-4 py-3 glass-strong sticky top-0 z-10 shrink-0">
+      <div className="px-4 py-3 glass-strong sticky top-0 z-10 shrink-0" style={{ paddingTop: "calc(var(--sat) + 12px)" }}>
         <div className="flex items-center gap-3 mb-4">
           <button
             onClick={onClose}
