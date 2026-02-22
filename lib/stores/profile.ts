@@ -94,7 +94,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
       const { data: row, error } = await supabase
         .from('profiles')
-        .upsert(profileData as any, { onConflict: 'id' })
+        .upsert(profileData, { onConflict: 'id' })
         .select()
         .maybeSingle()
 
@@ -130,7 +130,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       const supabase = createClient()
       const { data, error } = await supabase
         .from('profiles')
-        .update(updates as any)
+        .update(updates)
         .eq('id', profile.id)
         .select()
         .maybeSingle()
@@ -224,13 +224,24 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       const supabase = createClient()
       const { data, error } = await supabase
         .from('profiles')
-        .update(updates as any)
+        .update(updates)
         .eq('id', profile.id)
         .select()
         .maybeSingle()
 
       if (error) return { error: error.message }
       set({ profile: (data as Profile) ?? { ...profile, ...updates } })
+
+      try {
+        const url = new URL(photoUrl)
+        const pathParts = url.pathname.split('/storage/v1/object/public/avatars/')
+        if (pathParts[1]) {
+          await supabase.storage.from('avatars').remove([decodeURIComponent(pathParts[1])])
+        }
+      } catch {
+        // storage cleanup is best-effort
+      }
+
       return { error: null }
     } catch (e: any) {
       return { error: e?.message ?? 'Не удалось удалить фото' }

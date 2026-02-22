@@ -2,6 +2,7 @@
 
 import { create } from 'zustand'
 import { createClient } from '@/lib/supabase/client'
+import { sanitizeMessage } from '@/lib/sanitize'
 import type { Database, RoomCategory } from '@/lib/supabase/database.types'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 
@@ -112,11 +113,18 @@ export const useRoomsStore = create<RoomsState>((set, get) => ({
   },
 
   sendRoomMessage: async (roomId, senderId, content) => {
+    const clean = sanitizeMessage(content)
+    if (!clean) return
     const supabase = createClient()
-    await supabase.from('room_messages').insert({ room_id: roomId, sender_id: senderId, content })
+    const { error } = await supabase.from('room_messages').insert({
+      room_id: roomId, sender_id: senderId, content: clean,
+    })
+    if (error) console.warn('[rooms] sendRoomMessage error:', error.message)
   },
 
   subscribeToRoom: (roomId) => {
+    const prev = get().channel
+    if (prev) { const sb = createClient(); sb.removeChannel(prev) }
     const supabase = createClient()
     const channel = supabase
       .channel(`room:${roomId}`)

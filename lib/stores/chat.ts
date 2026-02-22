@@ -198,7 +198,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const supabase = createClient()
       await supabase
         .from('messages')
-        .update({ read_at: new Date().toISOString() } as any)
+        .update({ read_at: new Date().toISOString() })
         .eq('match_id', matchId)
         .neq('sender_id', myUserId)
         .is('read_at', null)

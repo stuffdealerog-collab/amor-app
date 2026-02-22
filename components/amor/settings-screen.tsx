@@ -1,19 +1,34 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Shield, Lock, Bell, User, LogOut, ChevronLeft, ChevronRight, Eye, UserX, AlertTriangle, Moon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useAuthStore } from "@/lib/stores/auth"
+import { useProfileStore } from "@/lib/stores/profile"
+import { useMatchStore } from "@/lib/stores/match"
+import { useChatStore } from "@/lib/stores/chat"
 
 interface SettingsScreenProps {
   onClose: () => void
   onLogout?: () => void
+  onOpenEdit?: () => void
 }
 
-export function SettingsScreen({ onClose, onLogout }: SettingsScreenProps) {
+export function SettingsScreen({ onClose, onLogout, onOpenEdit }: SettingsScreenProps) {
   const [parentalOpen, setParentalOpen] = useState(false)
+  const [confirmLogout, setConfirmLogout] = useState(false)
   const [alertsEnabled, setAlertsEnabled] = useState(true)
   const [timeLimit, setTimeLimit] = useState(60)
+  const [invisibleMode, setInvisibleMode] = useState(false)
+
+  const { user } = useAuthStore()
+  const { profile } = useProfileStore()
+  const { matches } = useMatchStore()
+  const { chats } = useChatStore()
+
+  const activeChatsCount = chats.length
+  const matchCount = matches.length
 
   if (parentalOpen) {
     return (
@@ -41,12 +56,12 @@ export function SettingsScreen({ onClose, onLogout }: SettingsScreenProps) {
 
           <div className="grid grid-cols-2 gap-2.5 stagger">
             <div className="rounded-2xl glass p-3.5 border border-amor-cyan/15">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Время в сети</p>
-              <p className="text-xl font-black text-foreground">45 <span className="text-[12px] font-bold text-muted-foreground">мин</span></p>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Матчей</p>
+              <p className="text-xl font-black text-foreground">{matchCount}</p>
             </div>
             <div className="rounded-2xl glass p-3.5 border border-amor-cyan/15">
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Активные чаты</p>
-              <p className="text-xl font-black text-foreground">4</p>
+              <p className="text-xl font-black text-foreground">{activeChatsCount}</p>
             </div>
             <div className="col-span-2 rounded-2xl glass p-3.5 border border-amor-cyan/15 flex items-center justify-between">
               <div>
@@ -119,19 +134,34 @@ export function SettingsScreen({ onClose, onLogout }: SettingsScreenProps) {
         <div>
           <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2.5 px-1">Аккаунт</h3>
           <div className="rounded-2xl glass overflow-hidden">
-            {[
-              { icon: User, label: "Редактировать профиль", action: "chevron" },
-              { icon: Lock, label: "Конфиденциальность", action: "chevron" },
-              { icon: Bell, label: "Уведомления", action: "chevron" },
-            ].map((item, i, arr) => (
-              <button key={item.label} className={cn("w-full flex items-center justify-between p-3.5 active:bg-white/5 transition-colors", i < arr.length - 1 && "border-b border-white/5")}>
-                <div className="flex items-center gap-2.5">
-                  <item.icon className="h-[18px] w-[18px] text-foreground" />
-                  <span className="text-[14px] font-bold text-foreground">{item.label}</span>
+            <button
+              onClick={() => { onClose(); onOpenEdit?.() }}
+              className="w-full flex items-center justify-between p-3.5 active:bg-white/5 transition-colors border-b border-white/5"
+            >
+              <div className="flex items-center gap-2.5">
+                <User className="h-[18px] w-[18px] text-foreground" />
+                <span className="text-[14px] font-bold text-foreground">Редактировать профиль</span>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </button>
+            <div className="flex items-center justify-between p-3.5 border-b border-white/5">
+              <div className="flex items-center gap-2.5">
+                <Bell className="h-[18px] w-[18px] text-foreground" />
+                <span className="text-[14px] font-bold text-foreground">Уведомления</span>
+              </div>
+              <div className={cn("relative flex h-6 w-11 items-center rounded-full transition-all bg-amor-cyan")}>
+                <div className="absolute h-[18px] w-[18px] rounded-full bg-white left-[22px] shadow-sm" />
+              </div>
+            </div>
+            <div className="p-3.5">
+              <div className="flex items-center gap-2.5">
+                <Lock className="h-[18px] w-[18px] text-muted-foreground" />
+                <div>
+                  <span className="text-[14px] font-bold text-foreground block">Email</span>
+                  <span className="text-[11px] text-muted-foreground">{user?.email ?? '—'}</span>
                 </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </button>
-            ))}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -149,22 +179,18 @@ export function SettingsScreen({ onClose, onLogout }: SettingsScreenProps) {
               </div>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             </button>
-            <div className="flex items-center justify-between p-3.5 border-b border-white/5">
+            <div className="flex items-center justify-between p-3.5">
               <div className="flex items-center gap-2.5">
                 <Eye className="h-[18px] w-[18px] text-foreground" />
                 <span className="text-[14px] font-bold text-foreground">Невидимка</span>
               </div>
-              <div className="relative flex h-6 w-11 items-center rounded-full bg-white/10">
-                <div className="absolute h-[18px] w-[18px] rounded-full bg-white left-[3px] shadow-sm" />
-              </div>
+              <button
+                onClick={() => setInvisibleMode(!invisibleMode)}
+                className={cn("relative flex h-6 w-11 items-center rounded-full transition-all", invisibleMode ? "bg-amor-purple" : "bg-white/10")}
+              >
+                <div className={cn("absolute h-[18px] w-[18px] rounded-full bg-white transition-all shadow-sm", invisibleMode ? "left-[22px]" : "left-[3px]")} />
+              </button>
             </div>
-            <button className="w-full flex items-center justify-between p-3.5 active:bg-white/5 transition-colors">
-              <div className="flex items-center gap-2.5">
-                <UserX className="h-[18px] w-[18px] text-foreground" />
-                <span className="text-[14px] font-bold text-foreground">Заблокированные</span>
-              </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            </button>
           </div>
         </div>
 
@@ -172,12 +198,12 @@ export function SettingsScreen({ onClose, onLogout }: SettingsScreenProps) {
         <div>
           <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2.5 px-1">Другое</h3>
           <div className="rounded-2xl glass overflow-hidden">
-            <button className="w-full flex items-center justify-between p-3.5 border-b border-white/5 active:bg-white/5 transition-colors">
+            <div className="w-full flex items-center justify-between p-3.5 border-b border-white/5">
               <span className="text-[14px] font-bold text-foreground">О приложении</span>
               <span className="text-[10px] text-muted-foreground">v1.0.0</span>
-            </button>
+            </div>
             <button
-              onClick={onLogout}
+              onClick={() => setConfirmLogout(true)}
               className="w-full flex items-center gap-2.5 p-3.5 active:bg-white/5 transition-colors text-destructive"
             >
               <LogOut className="h-[18px] w-[18px]" />
@@ -193,6 +219,30 @@ export function SettingsScreen({ onClose, onLogout }: SettingsScreenProps) {
           </div>
         </div>
       </div>
+
+      {/* Logout Confirmation */}
+      {confirmLogout && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm anim-fade-in" onClick={() => setConfirmLogout(false)}>
+          <div className="mx-6 w-full max-w-sm rounded-3xl glass-strong p-6 border border-white/10 anim-scale-bounce" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-black text-foreground text-center mb-2">Выйти из аккаунта?</h3>
+            <p className="text-[13px] text-muted-foreground text-center mb-6">Тебе нужно будет снова ввести email для входа</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmLogout(false)}
+                className="flex-1 rounded-2xl glass py-3 text-[14px] font-bold text-foreground active:scale-95 transition-all"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={() => { setConfirmLogout(false); onLogout?.() }}
+                className="flex-1 rounded-2xl bg-destructive py-3 text-[14px] font-bold text-primary-foreground active:scale-95 transition-all"
+              >
+                Выйти
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -2,7 +2,7 @@
 
 import { create } from 'zustand'
 import { createClient } from '@/lib/supabase/client'
-import type { User, Session } from '@supabase/supabase-js'
+import type { User, Session, Subscription } from '@supabase/supabase-js'
 
 interface AuthState {
   user: User | null
@@ -15,6 +15,8 @@ interface AuthState {
   verifyOtp: (email: string, token: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
 }
+
+let authSubscription: Subscription | null = null
 
 function mapAuthError(msg: string): string {
   const m = msg.toLowerCase()
@@ -51,9 +53,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         initialized: true,
       })
 
-      supabase.auth.onAuthStateChange((_event, session) => {
+      if (authSubscription) {
+        authSubscription.unsubscribe()
+      }
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
         set({ user: session?.user ?? null, session: session ?? null })
       })
+      authSubscription = subscription
     } catch (e) {
       console.warn('[auth] initialize error:', e)
       set({ user: null, session: null, loading: false, initialized: true })
@@ -107,11 +114,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   signOut: async () => {
     try {
+      if (authSubscription) {
+        authSubscription.unsubscribe()
+        authSubscription = null
+      }
       const supabase = createClient()
       await supabase.auth.signOut()
     } catch {
       // best-effort
     }
-    set({ user: null, session: null })
+    set({ user: null, session: null, initialized: false })
   },
 }))

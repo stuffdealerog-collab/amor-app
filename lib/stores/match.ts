@@ -31,6 +31,7 @@ interface MatchState {
   dailySwipes: number
   maxDailySwipes: number
   loading: boolean
+  swiping: boolean
   newMatch: (Match & { otherProfile: Profile }) | null
 
   fetchCards: (userId: string, agePool: string, interests: string[]) => Promise<void>
@@ -45,6 +46,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   dailySwipes: 0,
   maxDailySwipes: 5,
   loading: false,
+  swiping: false,
   newMatch: null,
 
   fetchCards: async (userId, agePool, myInterests) => {
@@ -74,7 +76,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
         .limit(20)
 
       if (excluded.length > 0) {
-        query = query.not('id', 'in', `(${excluded.join(',')})`)
+        query = query.not('id', 'in', `(${excluded.map(id => `"${id}"`).join(',')})`)
       }
 
       const { data: profiles, error } = await query
@@ -114,46 +116,58 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   swipe: async (swiperId, swipedId, action, myInterests) => {
-    if ((get() as any)._swiping) return
-    ;(set as any)({ _swiping: true })
-    setTimeout(() => (set as any)({ _swiping: false }), 400)
-    const supabase = createClient()
-    await supabase.from('swipes').insert({ swiper_id: swiperId, swiped_id: swipedId, action })
+    if (get().swiping) return
+    set({ swiping: true })
+    setTimeout(() => set({ swiping: false }), 400)
 
     set(s => ({
       cards: s.cards.filter(c => c.id !== swipedId),
       dailySwipes: s.dailySwipes + 1,
     }))
 
-    if (action === 'like' || action === 'superlike') {
-      const { data: mutual } = await supabase
+    try {
+      const supabase = createClient()
+      const { error: swipeErr } = await supabase
         .from('swipes')
-        .select('id')
-        .eq('swiper_id', swipedId)
-        .eq('swiped_id', swiperId)
-        .in('action', ['like', 'superlike'])
-        .single()
+        .insert({ swiper_id: swiperId, swiped_id: swipedId, action })
 
-      if (mutual) {
-        const { data: other } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', swipedId)
-          .single()
+      if (swipeErr) {
+        console.warn('[match] swipe insert error:', swipeErr.message)
+        return
+      }
 
-        const vibeScore = other ? calculateVibeScore(myInterests, other.interests ?? []) : 50
+      if (action === 'like' || action === 'superlike') {
+        const { data: mutual } = await supabase
+          .from('swipes')
+          .select('id')
+          .eq('swiper_id', swipedId)
+          .eq('swiped_id', swiperId)
+          .in('action', ['like', 'superlike'])
+          .maybeSingle()
 
-        const ids = [swiperId, swipedId].sort()
-        const { data: match } = await supabase
-          .from('matches')
-          .insert({ user1_id: ids[0], user2_id: ids[1], vibe_score: vibeScore })
-          .select()
-          .single()
+        if (mutual) {
+          const { data: other } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', swipedId)
+            .single()
 
-        if (match && other) {
-          set({ newMatch: { ...match, otherProfile: other } })
+          const vibeScore = other ? calculateVibeScore(myInterests, other.interests ?? []) : 50
+          const ids = [swiperId, swipedId].sort()
+
+          const { data: match } = await supabase
+            .from('matches')
+            .insert({ user1_id: ids[0], user2_id: ids[1], vibe_score: vibeScore })
+            .select()
+            .maybeSingle()
+
+          if (match && other) {
+            set({ newMatch: { ...match, otherProfile: other } })
+          }
         }
       }
+    } catch (e) {
+      console.warn('[match] swipe error:', e)
     }
   },
 

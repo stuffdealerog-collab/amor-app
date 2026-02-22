@@ -36,7 +36,12 @@ export function VoiceRoom({ roomId, onLeave }: VoiceRoomProps) {
           return
         }
 
-        const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL || "wss://localhost:7880"
+        const livekitUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL
+        if (!livekitUrl) {
+          setError("Голосовые каналы скоро будут доступны")
+          setConnecting(false)
+          return
+        }
         await connectToVoiceRoom(room, token, livekitUrl, handleParticipantsChange)
         if (mounted) setConnecting(false)
       } catch (err) {

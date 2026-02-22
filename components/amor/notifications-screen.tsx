@@ -9,6 +9,7 @@ import { useNotificationsStore } from "@/lib/stores/notifications"
 
 interface NotificationsScreenProps {
   onClose: () => void
+  onOpenChat?: (matchId?: string) => void
 }
 
 function timeAgo(dateStr: string): string {
@@ -24,7 +25,7 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString("ru", { day: "numeric", month: "short" })
 }
 
-export function NotificationsScreen({ onClose }: NotificationsScreenProps) {
+export function NotificationsScreen({ onClose, onOpenChat }: NotificationsScreenProps) {
   const { user } = useAuthStore()
   const { notifications, unreadCount, loading, fetchNotifications, markAllRead } = useNotificationsStore()
 
@@ -32,6 +33,11 @@ export function NotificationsScreen({ onClose }: NotificationsScreenProps) {
     if (user) fetchNotifications(user.id)
     return () => { markAllRead() }
   }, [user, fetchNotifications, markAllRead])
+
+  const handleNotificationClick = (n: typeof notifications[0]) => {
+    onOpenChat?.()
+    onClose()
+  }
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-background anim-slide-up">
@@ -78,10 +84,11 @@ export function NotificationsScreen({ onClose }: NotificationsScreenProps) {
           const iconColor = n.type === 'match' ? '#ff2e6c' : '#3e8bff'
 
           return (
-            <div
+            <button
               key={n.id}
+              onClick={() => handleNotificationClick(n)}
               className={cn(
-                "relative flex gap-3 p-3.5 rounded-2xl transition-all",
+                "relative flex gap-3 p-3.5 rounded-2xl transition-all w-full text-left active:scale-[0.99]",
                 !n.read ? "glass border border-amor-pink/10" : "bg-white/3 opacity-60"
               )}
             >
@@ -109,7 +116,7 @@ export function NotificationsScreen({ onClose }: NotificationsScreenProps) {
                 <p className="text-[11px] text-muted-foreground leading-relaxed mb-1 truncate">{n.description}</p>
                 <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-widest">{timeAgo(n.createdAt)}</span>
               </div>
-            </div>
+            </button>
           )
         })}
       </div>

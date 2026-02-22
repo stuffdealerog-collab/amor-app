@@ -19,7 +19,11 @@ const iconMap: Record<string, React.ElementType> = {
   путешествия: Star, танцы: Music, косплей: Sparkles, наука: BookOpen,
 }
 
-export function VibeScreen() {
+interface VibeScreenProps {
+  onOpenChat?: (matchId: string) => void
+}
+
+export function VibeScreen({ onOpenChat }: VibeScreenProps = {}) {
   const [photoIdx, setPhotoIdx] = useState(0)
   const [dir, setDir] = useState<"l" | "r" | null>(null)
   const [offX, setOffX] = useState(0)
@@ -118,6 +122,11 @@ export function VibeScreen() {
     return (
       <MatchScreen
         onClose={clearNewMatch}
+        onWriteMessage={() => {
+          const matchId = newMatch.id
+          clearNewMatch()
+          onOpenChat?.(matchId)
+        }}
         userImg={userAvatar}
         matchedImg={matchAvatar}
         matchedName={newMatch.otherProfile.name}
@@ -142,7 +151,14 @@ export function VibeScreen() {
           <Heart className="h-8 w-8 text-amor-pink" />
         </div>
         <h2 className="text-xl font-black text-foreground mb-2">Пока никого нет</h2>
-        <p className="text-[13px] text-muted-foreground leading-relaxed">Новые люди появятся скоро.<br />Загляни позже!</p>
+        <p className="text-[13px] text-muted-foreground leading-relaxed mb-6">Новые люди появятся скоро.<br />Загляни позже!</p>
+        <button
+          onClick={() => user && profile?.age_pool && fetchCards(user.id, profile.age_pool, profile.interests ?? [])}
+          className="flex items-center gap-2 rounded-2xl grad-pink px-6 py-3 text-[13px] font-bold text-primary-foreground active:scale-95 transition-all"
+        >
+          <Loader2 className={cn("h-4 w-4", loading && "animate-spin")} />
+          Обновить
+        </button>
       </div>
     )
   }

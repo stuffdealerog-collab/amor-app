@@ -132,11 +132,14 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
     const supabase = createClient()
     const channel = supabase
       .channel('notif-updates')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'matches' }, () => {
-        get().fetchNotifications(userId)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'matches' }, (payload) => {
+        const match = payload.new as { user1_id: string; user2_id: string }
+        if (match.user1_id === userId || match.user2_id === userId) {
+          get().fetchNotifications(userId)
+        }
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
-        const msg = payload.new as any
+        const msg = payload.new as { sender_id: string }
         if (msg.sender_id !== userId) {
           set(s => ({ unreadCount: s.unreadCount + 1 }))
         }

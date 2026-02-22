@@ -101,17 +101,19 @@ export const useCharactersStore = create<CharactersState>((set, get) => ({
       character_id: characterId,
       equipped: false,
     })
-    if (error?.message.includes('duplicate')) {
+    if (error?.message?.includes('duplicate')) {
       const { data: existing } = await supabase
         .from('user_characters')
-        .select('xp')
+        .select('xp, level')
         .eq('user_id', userId)
         .eq('character_id', characterId)
         .single()
       if (existing) {
+        const newXp = (existing.xp ?? 0) + 50
+        const newLevel = Math.min(Math.floor(newXp / 100) + 1, 10)
         await supabase
           .from('user_characters')
-          .update({ xp: (existing.xp ?? 0) + 1 } as any)
+          .update({ xp: newXp, level: newLevel })
           .eq('user_id', userId)
           .eq('character_id', characterId)
       }
@@ -157,12 +159,19 @@ export const useCharactersStore = create<CharactersState>((set, get) => ({
     const { canClaim } = await get().canClaimFreeChest(userId)
     if (!canClaim) return { error: 'Ещё рано', character: null }
 
+    const character = get().rollCharacter()
+    if (!character) return { error: 'Нет доступных персонажей', character: null }
+
     try {
       const supabase = createClient()
-      await supabase.from('profiles')
-        .update({ last_free_chest: new Date().toISOString() } as any)
+
+      const { error: tsErr } = await supabase.from('profiles')
+        .update({ last_free_chest: new Date().toISOString() })
         .eq('id', userId)
-      return { error: null, character: null }
+      if (tsErr) return { error: tsErr.message, character: null }
+
+      await get().addCharacterToUser(userId, character.id)
+      return { error: null, character }
     } catch (e: any) {
       return { error: e?.message ?? 'Ошибка', character: null }
     }

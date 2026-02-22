@@ -14,7 +14,7 @@ interface StarsState {
   fetchBalance: (userId: string) => Promise<void>
   fetchTransactions: (userId: string) => Promise<void>
   giftStar: (fromUserId: string, toUserId: string) => Promise<{ error: string | null }>
-  exchangeForCharacter: (userId: string, characterId: string) => Promise<{ error: string | null }>
+  exchangeForCharacter: (userId: string) => Promise<{ error: string | null; characterId?: string }>
   addStars: (userId: string, amount: number, reason: string) => Promise<void>
 }
 
@@ -24,95 +24,92 @@ export const useStarsStore = create<StarsState>((set, get) => ({
   loading: false,
 
   fetchBalance: async (userId) => {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('profiles')
-      .select('stars_count')
-      .eq('id', userId)
-      .single()
-    set({ balance: data?.stars_count ?? 0 })
+    try {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('profiles')
+        .select('stars_count')
+        .eq('id', userId)
+        .single()
+      set({ balance: data?.stars_count ?? 0 })
+    } catch (e) {
+      console.warn('[stars] fetchBalance error:', e)
+    }
   },
 
   fetchTransactions: async (userId) => {
     set({ loading: true })
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('stars_transactions')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(50)
-    set({ transactions: data ?? [], loading: false })
+    try {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('stars_transactions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(50)
+      set({ transactions: data ?? [], loading: false })
+    } catch (e) {
+      console.warn('[stars] fetchTransactions error:', e)
+      set({ loading: false })
+    }
   },
 
   giftStar: async (fromUserId, toUserId) => {
-    const { balance } = get()
-    if (balance < 1) return { error: 'Недостаточно звёзд' }
+    if (get().balance < 1) return { error: 'Недостаточно звёзд' }
 
-    const supabase = createClient()
+    try {
+      const supabase = createClient()
+      const { data, error } = await supabase.rpc('gift_star', {
+        p_from: fromUserId,
+        p_to: toUserId,
+      })
+      if (error) return { error: error.message }
 
-    const { error: e1 } = await supabase
-      .from('profiles')
-      .update({ stars_count: balance - 1 })
-      .eq('id', fromUserId)
+      const result = data as { error: string | null; balance?: number }
+      if (result.error) return { error: result.error }
 
-    if (e1) return { error: e1.message }
-
-    const { data: target } = await supabase
-      .from('profiles')
-      .select('stars_count')
-      .eq('id', toUserId)
-      .single()
-
-    await supabase
-      .from('profiles')
-      .update({ stars_count: (target?.stars_count ?? 0) + 1 })
-      .eq('id', toUserId)
-
-    await supabase.from('stars_transactions').insert([
-      { user_id: fromUserId, amount: -1, reason: 'Подарил звезду', from_user_id: null },
-      { user_id: toUserId, amount: 1, reason: 'Получил звезду в подарок', from_user_id: fromUserId },
-    ])
-
-    set({ balance: balance - 1 })
-    return { error: null }
+      set({ balance: result.balance ?? get().balance - 1 })
+      return { error: null }
+    } catch (e: any) {
+      return { error: e?.message ?? 'Ошибка отправки звезды' }
+    }
   },
 
-  exchangeForCharacter: async (userId, characterId) => {
-    const { balance } = get()
-    if (balance < 100) return { error: 'Нужно 100 звёзд для обмена' }
+  exchangeForCharacter: async (userId) => {
+    if (get().balance < 100) return { error: 'Нужно 100 звёзд для обмена' }
 
-    const supabase = createClient()
+    try {
+      const supabase = createClient()
+      const { data, error } = await supabase.rpc('exchange_stars_for_character', {
+        p_user_id: userId,
+      })
+      if (error) return { error: error.message }
 
-    const { error: e1 } = await supabase
-      .from('profiles')
-      .update({ stars_count: balance - 100 })
-      .eq('id', userId)
-    if (e1) return { error: e1.message }
+      const result = data as { error: string | null; character_id?: string; balance?: number }
+      if (result.error) return { error: result.error }
 
-    const { error: e2 } = await supabase
-      .from('user_characters')
-      .insert({ user_id: userId, character_id: characterId, equipped: false })
-    if (e2) {
-      await supabase.from('profiles').update({ stars_count: balance }).eq('id', userId)
-      return { error: e2.message.includes('duplicate') ? 'Персонаж уже есть' : e2.message }
+      set({ balance: result.balance ?? get().balance - 100 })
+      return { error: null, characterId: result.character_id }
+    } catch (e: any) {
+      return { error: e?.message ?? 'Ошибка обмена' }
     }
-
-    await supabase.from('stars_transactions').insert({
-      user_id: userId,
-      amount: -100,
-      reason: 'Обмен на персонажа',
-    })
-
-    set({ balance: balance - 100 })
-    return { error: null }
   },
 
   addStars: async (userId, amount, reason) => {
-    const supabase = createClient()
-    const { balance } = get()
-    await supabase.from('profiles').update({ stars_count: balance + amount }).eq('id', userId)
-    await supabase.from('stars_transactions').insert({ user_id: userId, amount, reason })
-    set({ balance: balance + amount })
+    try {
+      const supabase = createClient()
+      const { data, error } = await supabase.rpc('increment_stars', {
+        p_user_id: userId,
+        p_amount: amount,
+        p_reason: reason,
+      })
+      if (error) {
+        console.warn('[stars] addStars RPC error:', error.message)
+        return
+      }
+      set({ balance: (data as number) ?? get().balance + amount })
+    } catch (e) {
+      console.warn('[stars] addStars error:', e)
+    }
   },
 }))

@@ -271,7 +271,24 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['promo_redemptions']['Insert']>
       }
     }
-    Functions: Record<string, never>
+    Functions: {
+      increment_stars: {
+        Args: { p_user_id: string; p_amount: number; p_reason?: string }
+        Returns: number
+      }
+      gift_star: {
+        Args: { p_from: string; p_to: string }
+        Returns: { error: string | null; balance?: number }
+      }
+      exchange_stars_for_character: {
+        Args: { p_user_id: string }
+        Returns: { error: string | null; character_id?: string; balance?: number }
+      }
+      redeem_promo: {
+        Args: { p_user_id: string; p_code: string }
+        Returns: { success: boolean; message: string; type?: string; value?: string; balance?: number }
+      }
+    }
     Enums: {
       age_pool: AgePool
       room_type: RoomType

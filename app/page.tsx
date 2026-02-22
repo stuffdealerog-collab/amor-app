@@ -98,6 +98,14 @@ export default function AmorApp() {
     setPhase("intro")
   }, [resetProfile, untrackPresence, unsubNotifs])
 
+  const navigateToChats = useCallback(() => {
+    setActiveTab("chats")
+  }, [])
+
+  const handleOpenChat = useCallback((matchId?: string) => {
+    setActiveTab("chats")
+  }, [])
+
   if (!initialized || phase === null) {
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background">
@@ -127,7 +135,7 @@ export default function AmorApp() {
 
       <main className="relative min-h-[100dvh]">
         <div className={cn("transition-opacity duration-200", activeTab !== "feed" && "hidden")}>
-          <VibeScreen />
+          <VibeScreen onOpenChat={handleOpenChat} />
         </div>
         <div className={cn("transition-opacity duration-200", activeTab !== "rooms" && "hidden")}>
           <RoomsScreen />
@@ -142,8 +150,19 @@ export default function AmorApp() {
 
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {showNotifications && <NotificationsScreen onClose={() => setShowNotifications(false)} />}
-      {showSettings && <SettingsScreen onClose={() => setShowSettings(false)} onLogout={handleLogout} />}
+      {showNotifications && (
+        <NotificationsScreen
+          onClose={() => setShowNotifications(false)}
+          onOpenChat={handleOpenChat}
+        />
+      )}
+      {showSettings && (
+        <SettingsScreen
+          onClose={() => setShowSettings(false)}
+          onLogout={handleLogout}
+          onOpenEdit={() => { setShowSettings(false); setShowEditProfile(true) }}
+        />
+      )}
       {showShop && <ShopScreen onClose={() => setShowShop(false)} />}
       {showQuests && <QuestsScreen onClose={() => setShowQuests(false)} />}
       {showEditProfile && <EditProfileScreen onClose={() => setShowEditProfile(false)} />}
