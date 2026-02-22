@@ -44,7 +44,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   cards: [],
   matches: [],
   dailySwipes: 0,
-  maxDailySwipes: 5,
+  maxDailySwipes: 50,
   loading: false,
   swiping: false,
   newMatch: null,
@@ -136,32 +136,25 @@ export const useMatchStore = create<MatchState>((set, get) => ({
         return
       }
 
+      // Match is now created server-side by DB trigger on mutual like.
+      // After swipe insert, check if a match was created.
       if (action === 'like' || action === 'superlike') {
-        const { data: mutual } = await supabase
-          .from('swipes')
-          .select('id')
-          .eq('swiper_id', swipedId)
-          .eq('swiped_id', swiperId)
-          .in('action', ['like', 'superlike'])
+        const ids = [swiperId, swipedId].sort()
+        const { data: match } = await supabase
+          .from('matches')
+          .select('*')
+          .eq('user1_id', ids[0])
+          .eq('user2_id', ids[1])
           .maybeSingle()
 
-        if (mutual) {
+        if (match) {
           const { data: other } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', swipedId)
             .single()
 
-          const vibeScore = other ? calculateVibeScore(myInterests, other.interests ?? []) : 50
-          const ids = [swiperId, swipedId].sort()
-
-          const { data: match } = await supabase
-            .from('matches')
-            .insert({ user1_id: ids[0], user2_id: ids[1], vibe_score: vibeScore })
-            .select()
-            .maybeSingle()
-
-          if (match && other) {
+          if (other) {
             set({ newMatch: { ...match, otherProfile: other } })
           }
         }

@@ -437,18 +437,15 @@
 .rarity-mythic::before {
   content: ''; position: absolute; inset: -2px; z-index: -1;
   border-radius: inherit;
-  background: conic-gradient(from var(--holo-angle, 0deg), #ff3a6e, #ff7b3a, #ffc830, #1df0b8, #9061f9, #ff3a6e);
+  /* iOS-compatible: rotate the pseudo-element via transform instead of @property */
+  background: conic-gradient(from 0deg, #ff3a6e, #ff7b3a, #ffc830, #1df0b8, #9061f9, #ff3a6e);
   animation: holo-rotate 3s linear infinite;
   opacity: 0.7;
 }
 
 @keyframes holo-rotate {
-  to { --holo-angle: 360deg; }
-}
-@property --holo-angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .effect-holo {
@@ -747,3 +744,33 @@
 .anim-char-rise-legendary { animation: char-rise-legendary 1s cubic-bezier(0.16,1,0.3,1) both; }
 .anim-char-rise-epic { animation: char-rise-epic 0.8s cubic-bezier(0.16,1,0.3,1) both; }
 .anim-char-rise-rare { animation: char-rise-rare 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+
+/* ── Reduced Motion ──────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .anim-float, .anim-float-gentle, .anim-glow-pulse,
+  .anim-blob, .anim-spin-slow, .anim-pulse-glow,
+  .anim-intro-blob { animation: none !important; }
+  .effect-holo::after, .effect-glitch::after,
+  .effect-flame::after, .effect-gold::after,
+  .effect-sparkle::after, .effect-mist::before { animation: none !important; }
+  .shimmer::after { animation: none !important; }
+}
+
+/* ── Focus Visible (keyboard a11y) ───────── */
+
+:focus-visible {
+  outline: 2px solid var(--amor-pink);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible) {
+  outline: none;
+}

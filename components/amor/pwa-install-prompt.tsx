@@ -23,21 +23,38 @@ const DISMISSED_KEY = "amor_pwa_dismissed"
 export function PwaInstallPrompt() {
   const [show, setShow] = useState(false)
   const [device, setDevice] = useState<"ios" | "android" | "desktop" | null>(null)
+  const [canNativeInstall, setCanNativeInstall] = useState(false)
 
   useEffect(() => {
     if (isStandalone()) return
     try {
       const dismissed = localStorage.getItem(DISMISSED_KEY)
       if (dismissed) return
-    } catch {}
+    } catch { }
     setDevice(getDeviceType())
+    // Check if native install prompt is available (Android Chrome)
+    if ((window as any).__pwaInstallPrompt) {
+      setCanNativeInstall(true)
+    }
     const timer = setTimeout(() => setShow(true), 2000)
     return () => clearTimeout(timer)
   }, [])
 
   const dismiss = () => {
     setShow(false)
-    try { localStorage.setItem(DISMISSED_KEY, "1") } catch {}
+    try { localStorage.setItem(DISMISSED_KEY, "1") } catch { }
+  }
+
+  const handleNativeInstall = async () => {
+    const prompt = (window as any).__pwaInstallPrompt
+    if (!prompt) return
+    prompt.prompt()
+    const result = await prompt.userChoice
+    if (result.outcome === "accepted") {
+      dismiss()
+    }
+    ; (window as any).__pwaInstallPrompt = null
+    setCanNativeInstall(false)
   }
 
   if (!show || !device) return null
@@ -63,6 +80,41 @@ export function PwaInstallPrompt() {
           </button>
         </div>
 
+        {/* Android: native install if available */}
+        {device === "android" && canNativeInstall && (
+          <button
+            onClick={handleNativeInstall}
+            className="w-full flex items-center justify-center gap-2 rounded-xl grad-pink py-3 text-[13px] font-bold text-primary-foreground active:scale-[0.98] transition-all glow-pink"
+          >
+            <Download className="h-4 w-4" />
+            Установить приложение
+          </button>
+        )}
+
+        {/* Android: manual instructions (fallback) */}
+        {device === "android" && !canNativeInstall && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 rounded-xl glass p-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amor-blue/15 shrink-0">
+                <MoreVertical className="h-4 w-4 text-amor-blue" />
+              </div>
+              <div>
+                <p className="text-[12px] font-bold text-foreground">1. Нажми три точки</p>
+                <p className="text-[10px] text-muted-foreground">В правом верхнем углу Chrome</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-xl glass p-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amor-cyan/15 shrink-0">
+                <Download className="h-4 w-4 text-amor-cyan" />
+              </div>
+              <div>
+                <p className="text-[12px] font-bold text-foreground">2. «Установить приложение»</p>
+                <p className="text-[10px] text-muted-foreground">Или «Добавить на главный экран»</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {device === "ios" && (
           <div className="space-y-3">
             <div className="flex items-center gap-3 rounded-xl glass p-3">
@@ -81,29 +133,6 @@ export function PwaInstallPrompt() {
               <div>
                 <p className="text-[12px] font-bold text-foreground">2. «На экран Домой»</p>
                 <p className="text-[10px] text-muted-foreground">Прокрути вниз и нажми</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {device === "android" && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 rounded-xl glass p-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amor-blue/15 shrink-0">
-                <MoreVertical className="h-4 w-4 text-amor-blue" />
-              </div>
-              <div>
-                <p className="text-[12px] font-bold text-foreground">1. Нажми три точки</p>
-                <p className="text-[10px] text-muted-foreground">В правом верхнем углу Chrome</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 rounded-xl glass p-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amor-cyan/15 shrink-0">
-                <Download className="h-4 w-4 text-amor-cyan" />
-              </div>
-              <div>
-                <p className="text-[12px] font-bold text-foreground">2. «Установить приложение»</p>
-                <p className="text-[10px] text-muted-foreground">Или «Добавить на главный экран»</p>
               </div>
             </div>
           </div>

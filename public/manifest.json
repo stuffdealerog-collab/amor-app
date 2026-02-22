@@ -2,6 +2,7 @@
   "name": "Amor — Найди своих людей",
   "short_name": "Amor",
   "description": "Социальное приложение нового поколения. Дружба по вайбу.",
+  "id": "/amor-app",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -19,10 +20,19 @@
       "src": "/images/amor-icon-pwa.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/images/amor-icon-pwa.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "categories": ["social", "entertainment"],
+  "categories": [
+    "social",
+    "entertainment"
+  ],
   "lang": "ru",
   "dir": "ltr"
 }

@@ -5,6 +5,7 @@ import Image from "next/image"
 import { Heart, X, Star, Music, Gamepad2, BookOpen, Sparkles, ChevronUp, Flame, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { MatchScreen } from "./match-screen"
+import { SkeletonCard } from "./skeleton"
 import { RARITY_CONFIG } from "./collection-data"
 import { useAuthStore } from "@/lib/stores/auth"
 import { useProfileStore } from "@/lib/stores/profile"
@@ -137,16 +138,28 @@ export function VibeScreen({ onOpenChat }: VibeScreenProps = {}) {
 
   if (loading && !cards.length) {
     return (
-      <div className="flex h-[100dvh] flex-col items-center justify-center bg-background" style={{ paddingTop: "var(--topbar-h)" }}>
-        <Loader2 className="h-8 w-8 text-amor-pink animate-spin mb-4" />
-        <p className="text-sm text-muted-foreground">Ищем людей...</p>
+      <div className="flex h-[100dvh] flex-col bg-background overflow-hidden" style={{ paddingTop: "var(--topbar-h)" }}>
+        <div className="flex items-center justify-between px-4 py-2.5 shrink-0">
+          <div>
+            <h2 className="text-[17px] font-black text-foreground leading-tight">Vibe Matching</h2>
+            <p className="text-[10px] font-semibold text-amor-cyan uppercase tracking-wider">сначала вайб — потом фото</p>
+          </div>
+        </div>
+        <div className="relative flex-1 mx-3 mb-1">
+          <SkeletonCard className="absolute inset-0" />
+        </div>
+        <div className="flex items-center justify-center gap-4 py-2 px-4 shrink-0" style={{ paddingBottom: "var(--bottomnav-h)" }}>
+          <div className="h-[52px] w-[52px] rounded-2xl shimmer bg-white/5" />
+          <div className="h-[60px] w-[60px] rounded-[22px] shimmer bg-amor-pink/10" />
+          <div className="h-[52px] w-[52px] rounded-2xl shimmer bg-white/5" />
+        </div>
       </div>
     )
   }
 
   if (!card) {
     return (
-      <div className="flex h-[100dvh] flex-col items-center justify-center px-8 bg-background text-center" style={{ paddingTop: "var(--topbar-h)" }}>
+      <div className="flex h-[100dvh] flex-col items-center justify-center px-8 bg-background text-center" style={{ paddingTop: "var(--topbar-h)", paddingBottom: "var(--bottomnav-h)" }}>
         <div className="flex h-20 w-20 items-center justify-center rounded-3xl glass mb-6 anim-float-gentle">
           <Heart className="h-8 w-8 text-amor-pink" />
         </div>
@@ -421,7 +434,7 @@ export function VibeScreen({ onOpenChat }: VibeScreenProps = {}) {
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-4 py-2 pb-[72px] px-4 shrink-0">
+      <div className="flex items-center justify-center gap-4 py-2 px-4 shrink-0" style={{ paddingBottom: "var(--bottomnav-h)" }}>
         <button onClick={() => doSwipe("l")} className="flex h-[52px] w-[52px] items-center justify-center rounded-2xl glass active:scale-90 transition-all border border-white/8" aria-label="Пропустить">
           <X className="h-5 w-5 text-muted-foreground" />
         </button>

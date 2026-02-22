@@ -63,6 +63,12 @@ export default function RootLayout({
                   })
                 }
               }
+              // Capture beforeinstallprompt for native Android PWA install
+              window.__pwaInstallPrompt = null;
+              window.addEventListener('beforeinstallprompt', function(e) {
+                e.preventDefault();
+                window.__pwaInstallPrompt = e;
+              });
             `,
           }}
         />

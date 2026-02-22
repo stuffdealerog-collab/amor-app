@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Shield, Lock, Bell, User, LogOut, ChevronLeft, ChevronRight, Eye, UserX, AlertTriangle, Moon } from "lucide-react"
+import { Shield, Lock, Bell, User, LogOut, ChevronLeft, ChevronRight, Eye, UserX, AlertTriangle, Moon, Trash2, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/lib/stores/auth"
 import { useProfileStore } from "@/lib/stores/profile"
@@ -18,17 +18,37 @@ interface SettingsScreenProps {
 export function SettingsScreen({ onClose, onLogout, onOpenEdit }: SettingsScreenProps) {
   const [parentalOpen, setParentalOpen] = useState(false)
   const [confirmLogout, setConfirmLogout] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleteInput, setDeleteInput] = useState("")
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const [alertsEnabled, setAlertsEnabled] = useState(true)
   const [timeLimit, setTimeLimit] = useState(60)
   const [invisibleMode, setInvisibleMode] = useState(false)
 
   const { user } = useAuthStore()
-  const { profile } = useProfileStore()
+  const { profile, deleteProfile } = useProfileStore()
   const { matches } = useMatchStore()
   const { chats } = useChatStore()
 
   const activeChatsCount = chats.length
   const matchCount = matches.length
+
+  const handleDeleteAccount = async () => {
+    if (!user || !profile) return
+    if (deleteInput.trim().toLowerCase() !== profile.name.trim().toLowerCase()) return
+
+    setDeleting(true)
+    setDeleteError(null)
+    const { error } = await deleteProfile(user.id)
+    if (error) {
+      setDeleteError(error)
+      setDeleting(false)
+    } else {
+      // Profile deleted & signed out — app will return to intro screen
+      window.location.reload()
+    }
+  }
 
   if (parentalOpen) {
     return (
@@ -204,10 +224,17 @@ export function SettingsScreen({ onClose, onLogout, onOpenEdit }: SettingsScreen
             </div>
             <button
               onClick={() => setConfirmLogout(true)}
-              className="w-full flex items-center gap-2.5 p-3.5 active:bg-white/5 transition-colors text-destructive"
+              className="w-full flex items-center gap-2.5 p-3.5 active:bg-white/5 transition-colors text-destructive border-b border-white/5"
             >
               <LogOut className="h-[18px] w-[18px]" />
               <span className="text-[14px] font-bold">Выйти</span>
+            </button>
+            <button
+              onClick={() => { setConfirmDelete(true); setDeleteInput(""); setDeleteError(null) }}
+              className="w-full flex items-center gap-2.5 p-3.5 active:bg-white/5 transition-colors text-red-500"
+            >
+              <Trash2 className="h-[18px] w-[18px]" />
+              <span className="text-[14px] font-bold">Удалить аккаунт</span>
             </button>
           </div>
         </div>
@@ -238,6 +265,63 @@ export function SettingsScreen({ onClose, onLogout, onOpenEdit }: SettingsScreen
                 className="flex-1 rounded-2xl bg-destructive py-3 text-[14px] font-bold text-primary-foreground active:scale-95 transition-all"
               >
                 Выйти
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Confirmation */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm anim-fade-in" onClick={() => !deleting && setConfirmDelete(false)}>
+          <div className="mx-6 w-full max-w-sm rounded-3xl glass-strong p-6 border border-red-500/20 anim-scale-bounce" onClick={e => e.stopPropagation()}>
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/10 border border-red-500/20 mx-auto mb-4">
+              <Trash2 className="h-7 w-7 text-red-500" />
+            </div>
+            <h3 className="text-lg font-black text-foreground text-center mb-1">Удалить аккаунт?</h3>
+            <p className="text-[12px] text-muted-foreground text-center mb-5 leading-relaxed">
+              Это действие <span className="text-red-400 font-bold">необратимо</span>. Будут удалены все данные: профиль, фотографии, переписки, персонажи и звёзды.
+            </p>
+
+            <div className="mb-4">
+              <p className="text-[11px] text-muted-foreground mb-2">
+                Для подтверждения введи своё имя: <span className="text-foreground font-bold">{profile?.name}</span>
+              </p>
+              <input
+                type="text"
+                value={deleteInput}
+                onChange={(e) => setDeleteInput(e.target.value)}
+                placeholder="Введи имя..."
+                disabled={deleting}
+                className="w-full rounded-xl glass border border-white/10 px-3.5 py-2.5 text-[13px] text-foreground bg-transparent placeholder:text-muted-foreground/50 focus:outline-none focus:border-red-500/40 transition-colors"
+              />
+            </div>
+
+            {deleteError && (
+              <p className="text-[11px] text-red-400 text-center mb-3">{deleteError}</p>
+            )}
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDelete(false)}
+                disabled={deleting}
+                className="flex-1 rounded-2xl glass py-3 text-[14px] font-bold text-foreground active:scale-95 transition-all disabled:opacity-50"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleting || deleteInput.trim().toLowerCase() !== (profile?.name?.trim().toLowerCase() ?? "")}
+                className="flex-1 rounded-2xl bg-red-600 py-3 text-[14px] font-bold text-white active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Удаление...
+                  </>
+                ) : (
+                  "Удалить"
+                )}
               </button>
             </div>
           </div>

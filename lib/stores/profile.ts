@@ -40,6 +40,7 @@ interface ProfileState {
   uploadBanner: (userId: string, file: File) => Promise<string | null>
   removePhoto: (userId: string, photoUrl: string) => Promise<{ error: string | null }>
   uploadVoiceBio: (userId: string, blob: Blob) => Promise<string | null>
+  deleteProfile: (userId: string) => Promise<{ error: string | null }>
   reset: () => void
 }
 
@@ -269,6 +270,76 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     } catch (e) {
       console.warn('[profile] voice bio upload exception:', e)
       return null
+    }
+  },
+
+  deleteProfile: async (userId: string) => {
+    try {
+      const supabase = createClient()
+
+      // 1. Delete swipes (both directions)
+      await supabase.from('swipes').delete().or(`swiper_id.eq.${userId},swiped_id.eq.${userId}`)
+
+      // 2. Get user matches to delete related messages
+      const { data: userMatches } = await supabase
+        .from('matches')
+        .select('id')
+        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+
+      if (userMatches?.length) {
+        const matchIds = userMatches.map(m => m.id)
+        // Delete messages in those matches
+        for (const matchId of matchIds) {
+          await supabase.from('messages').delete().eq('match_id', matchId)
+        }
+      }
+
+      // 3. Delete matches
+      await supabase.from('matches').delete().or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+
+      // 4. Delete user characters
+      await supabase.from('user_characters').delete().eq('user_id', userId)
+
+      // 5. Delete stars transactions
+      await supabase.from('stars_transactions').delete().eq('user_id', userId)
+
+      // 6. Delete room participations
+      await supabase.from('room_participants').delete().eq('user_id', userId)
+
+      // 7. Delete user's rooms (if creator)
+      await supabase.from('rooms').delete().eq('created_by', userId)
+
+      // 8. Delete quests progress
+      await supabase.from('user_quests').delete().eq('user_id', userId)
+
+      // 9. Clean up storage (best-effort)
+      try {
+        const { data: avatarFiles } = await supabase.storage.from('avatars').list(userId)
+        if (avatarFiles?.length) {
+          await supabase.storage.from('avatars').remove(avatarFiles.map(f => `${userId}/${f.name}`))
+        }
+      } catch { }
+      try {
+        const { data: voiceFiles } = await supabase.storage.from('voice-bios').list(userId)
+        if (voiceFiles?.length) {
+          await supabase.storage.from('voice-bios').remove(voiceFiles.map(f => `${userId}/${f.name}`))
+        }
+      } catch { }
+
+      // 10. Delete profile (this is the main record)
+      const { error } = await supabase.from('profiles').delete().eq('id', userId)
+      if (error) {
+        console.warn('[profile] delete error:', error.message)
+        return { error: error.message }
+      }
+
+      // 11. Sign out
+      await supabase.auth.signOut()
+      set({ profile: null, loading: false, profileLoaded: false })
+      return { error: null }
+    } catch (e: any) {
+      console.warn('[profile] delete exception:', e)
+      return { error: e?.message ?? 'Не удалось удалить аккаунт' }
     }
   },
 
