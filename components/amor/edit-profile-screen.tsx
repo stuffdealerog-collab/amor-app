@@ -306,7 +306,7 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
                     "relative aspect-square rounded-2xl overflow-hidden bg-amor-surface-2",
                     i === 0 ? "border-2 border-amor-pink/40 glow-pink" : "glass border border-white/8"
                   )}>
-                    <Image src={photo} alt={`Фото ${i + 1}`} fill className="object-cover" />
+                    <Image src={photo} alt={`Фото ${i + 1}`} fill className="object-cover" sizes="96px" loading="lazy" />
                     {i === 0 && (
                       <div className="absolute bottom-1 left-1 right-1 z-10">
                         <span className="block text-center rounded-md bg-amor-pink/80 py-0.5 text-[7px] font-bold text-white uppercase">Аватарка</span>
@@ -588,7 +588,7 @@ export function EditProfileScreen({ onClose }: EditProfileScreenProps) {
             <div>
               <div className="relative h-28 rounded-2xl overflow-hidden mb-4 border border-white/8">
                 {bannerUrl && !bannerUrl.startsWith("preset:") ? (
-                  <Image src={bannerUrl} alt="Фон" fill className="object-cover" />
+                  <Image src={bannerUrl} alt="Фон" fill className="object-cover" sizes="430px" loading="lazy" />
                 ) : (
                   <div className={cn("w-full h-full", getBannerStyle(bannerUrl).className)} />
                 )}

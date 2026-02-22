@@ -16,7 +16,7 @@ function AvatarCircle({ src, alt, borderColor, glowClass, rotate }: { src: strin
   return (
     <div className={`relative h-24 w-24 rounded-full border-[3px] ${borderColor} overflow-hidden ${glowClass} ${rotate}`}>
       {src ? (
-        <Image src={src} alt={alt} fill className="object-cover" />
+        <Image src={src} alt={alt} fill className="object-cover" sizes="96px" />
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-amor-surface-2 text-2xl font-black text-foreground/40">
           {alt?.[0] ?? "?"}

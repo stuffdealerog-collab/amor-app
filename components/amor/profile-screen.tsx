@@ -166,7 +166,7 @@ export function ProfileScreen({ onOpenSettings, onOpenShop, onOpenEdit }: Profil
                 <div className="flex gap-2 overflow-x-auto hide-scrollbar -mx-4 px-4">
                   {(profile.photos ?? []).slice(0, 4).map((photo, i) => (
                     <div key={photo} className="relative w-20 h-24 shrink-0 rounded-xl overflow-hidden glass border border-white/8">
-                      <Image src={photo} alt={`Фото ${i + 1}`} fill className="object-cover" />
+                      <Image src={photo} alt={`Фото ${i + 1}`} fill className="object-cover" sizes="80px" loading="lazy" />
                     </div>
                   ))}
                   {photoCount > 4 && (
@@ -266,7 +266,7 @@ export function ProfileScreen({ onOpenSettings, onOpenShop, onOpenEdit }: Profil
               <div className="grid grid-cols-2 gap-2.5">
                 {(profile.photos ?? []).map((photo, i) => (
                   <div key={photo} className="relative aspect-[3/4] rounded-2xl overflow-hidden glass border border-white/8">
-                    <Image src={photo} alt={`Фото ${i + 1}`} fill className="object-cover" />
+                    <Image src={photo} alt={`Фото ${i + 1}`} fill className="object-cover" sizes="(max-width: 430px) 50vw, 200px" loading="lazy" />
                     {photo === profile.avatar_url && (
                       <div className="absolute top-2 left-2 z-10">
                         <span className="rounded-md bg-amor-pink/80 px-2 py-0.5 text-[8px] font-bold text-white uppercase">Главное</span>
@@ -354,6 +354,8 @@ export function ProfileScreen({ onOpenSettings, onOpenShop, onOpenEdit }: Profil
                           alt={c.name}
                           fill
                           className="object-contain object-bottom"
+                          sizes="100px"
+                          loading="lazy"
                           style={{ filter: `drop-shadow(0 0 8px ${c.color}30)` }}
                         />
                       </div>

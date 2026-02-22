@@ -351,6 +351,8 @@ export function BoxOpeningScreen({ collection, onClose, onCharacterReceived }: B
                 alt={character.name}
                 fill
                 className="object-contain"
+                sizes="208px"
+                priority
                 style={{
                   filter: `drop-shadow(0 0 ${rarity === "Mythic" ? 30 : rarity === "Legendary" ? 20 : 12}px ${charColor}60)`,
                 }}
@@ -407,6 +409,8 @@ export function BoxOpeningScreen({ collection, onClose, onCharacterReceived }: B
               alt={character.name}
               fill
               className="object-contain"
+              sizes="224px"
+              priority
               style={{
                 filter: `drop-shadow(0 0 ${rarity === "Mythic" ? 35 : rarity === "Legendary" ? 25 : 15}px ${charColor}50) drop-shadow(0 4px 12px rgba(0,0,0,0.5))`,
               }}

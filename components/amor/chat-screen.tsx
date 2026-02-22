@@ -127,7 +127,7 @@ function UserPreviewModal({ user: u, onClose }: { user: Profile; onClose: () => 
       <div className="flex-1 overflow-y-auto px-4 pb-8">
         {photos.length > 0 ? (
           <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-4" onClick={() => setPhotoIdx(i => (i + 1) % photos.length)}>
-            <Image src={photos[photoIdx]} alt={u.name} fill className="object-cover" />
+            <Image src={photos[photoIdx]} alt={u.name} fill className="object-cover" sizes="320px" />
             {photos.length > 1 && (
               <div className="absolute top-2.5 left-3 right-3 flex gap-1 z-10">
                 {photos.map((_, i) => (

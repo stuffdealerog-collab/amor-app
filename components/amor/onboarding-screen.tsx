@@ -360,7 +360,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                   "relative aspect-square rounded-2xl overflow-hidden bg-amor-surface-2",
                   i === 0 ? "border-2 border-amor-pink/40 glow-pink" : "glass border border-white/8"
                 )}>
-                  <Image src={preview} alt={`Фото ${i + 1}`} fill className="object-cover" unoptimized />
+                  <Image src={preview} alt={`Фото ${i + 1}`} fill className="object-cover" sizes="96px" unoptimized />
                   {i === 0 && (
                     <div className="absolute bottom-1 left-1 right-1 z-10">
                       <span className="block text-center rounded-md bg-amor-pink/80 py-0.5 text-[7px] font-bold text-white uppercase">Аватарка</span>
@@ -562,7 +562,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
                   <div className="flex items-center gap-3">
                     {photoPreviews.length > 0 ? (
                       <div className="relative h-10 w-10 rounded-xl overflow-hidden shrink-0 border border-amor-pink/20">
-                        <Image src={photoPreviews[0]} alt="Аватар" fill className="object-cover" unoptimized />
+                        <Image src={photoPreviews[0]} alt="Аватар" fill className="object-cover" sizes="64px" unoptimized />
                       </div>
                     ) : (
                       <div className="h-10 w-10 rounded-xl glass flex items-center justify-center shrink-0 border border-amor-pink/20">

@@ -99,7 +99,7 @@ export function NotificationsScreen({ onClose, onOpenChat }: NotificationsScreen
               <div className="shrink-0 mt-0.5">
                 {n.avatarUrl ? (
                   <div className="relative h-10 w-10 rounded-xl overflow-hidden border border-white/8">
-                    <Image src={n.avatarUrl} alt="" width={40} height={40} className="object-cover w-full h-full" />
+                    <Image src={n.avatarUrl} alt="" width={40} height={40} className="object-cover w-full h-full" sizes="40px" loading="lazy" />
                     <div className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full" style={{ background: iconColor }}>
                       <IconComp className="h-2 w-2 text-white" />
                     </div>
