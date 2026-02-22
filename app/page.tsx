@@ -20,6 +20,7 @@ import { useAuthStore } from "@/lib/stores/auth"
 import { useProfileStore } from "@/lib/stores/profile"
 import { usePresenceStore } from "@/lib/stores/presence"
 import { useNotificationsStore } from "@/lib/stores/notifications"
+import { createClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 
 type AppPhase = "intro" | "auth" | "onboarding" | "main" | null
@@ -53,6 +54,55 @@ export default function AmorApp() {
     trackPresence(user.id)
     subNotifs(user.id)
     fetchNotifications(user.id)
+
+    // Auto-prompt push notifications
+    if ('Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window) {
+      if (Notification.permission === 'default') {
+        Notification.requestPermission().then(async (permission) => {
+          if (permission === 'granted') {
+            try {
+              const reg = await navigator.serviceWorker.ready
+              let sub = await reg.pushManager.getSubscription()
+              if (!sub) {
+                const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+                if (vapidKey) {
+                  const urlB64ToUint8Array = (base64String: string) => {
+                    const padding = '='.repeat((4 - base64String.length % 4) % 4)
+                    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/')
+                    const rawData = window.atob(base64)
+                    const outputArray = new Uint8Array(rawData.length)
+                    for (let i = 0; i < rawData.length; ++i) {
+                      outputArray[i] = rawData.charCodeAt(i)
+                    }
+                    return outputArray
+                  }
+                  sub = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlB64ToUint8Array(vapidKey)
+                  })
+                }
+              }
+              if (sub) {
+                const p256dh = sub.getKey('p256dh') ? btoa(String.fromCharCode(...new Uint8Array(sub.getKey('p256dh')!))) : ''
+                const auth = sub.getKey('auth') ? btoa(String.fromCharCode(...new Uint8Array(sub.getKey('auth')!))) : ''
+                if (p256dh && auth) {
+                  const supabase = createClient()
+                  await supabase.from('push_subscriptions').upsert({
+                    user_id: user.id,
+                    endpoint: sub.endpoint,
+                    p256dh_key: p256dh,
+                    auth_key: auth
+                  } as any)
+                }
+              }
+            } catch (err) {
+              console.warn("Auto-push subscribe failed:", err)
+            }
+          }
+        })
+      }
+    }
+
     return () => { untrackPresence(); unsubNotifs() }
   }, [phase, user, trackPresence, untrackPresence, subNotifs, unsubNotifs, fetchNotifications])
 
@@ -131,7 +181,9 @@ export default function AmorApp() {
 
   return (
     <div className="relative mx-auto min-h-[100dvh] max-w-md overflow-hidden bg-background">
-      <TopBar onOpenNotifications={() => setShowNotifications(true)} />
+      {activeTab !== "profile" && (
+        <TopBar onOpenNotifications={() => setShowNotifications(true)} />
+      )}
 
       <main className="relative min-h-[100dvh]">
         <div className={cn("transition-opacity duration-200", activeTab !== "feed" && "hidden")}>
