@@ -1,15 +1,18 @@
-const MAX_DIMENSION = 1200
-const QUALITY = 0.7
+const MAX_DIMENSION = 800
+const QUALITY = 0.6
 
 export async function compressImage(file: File): Promise<File> {
   if (!file.type.startsWith('image/')) return file
 
   return new Promise((resolve) => {
     const img = new window.Image()
+    const objectUrl = URL.createObjectURL(file)
+
     img.onload = () => {
+      URL.revokeObjectURL(objectUrl)
       let { width, height } = img
 
-      if (width <= MAX_DIMENSION && height <= MAX_DIMENSION && file.size < 500 * 1024) {
+      if (width <= MAX_DIMENSION && height <= MAX_DIMENSION && file.size < 200 * 1024) {
         resolve(file)
         return
       }
@@ -36,7 +39,10 @@ export async function compressImage(file: File): Promise<File> {
         QUALITY
       )
     }
-    img.onerror = () => resolve(file)
-    img.src = URL.createObjectURL(file)
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      resolve(file)
+    }
+    img.src = objectUrl
   })
 }

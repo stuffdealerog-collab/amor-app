@@ -256,7 +256,7 @@ export function ShopScreen({ onClose }: ShopScreenProps) {
               {characters.slice(0, 4).map((char, i) => (
                 <div key={char.id} className={cn("relative overflow-hidden rounded-xl border-2 transition-transform", i === 0 ? "h-14 w-14 z-20 -translate-y-1" : "h-12 w-12 z-10")}
                   style={{ borderColor: `${char.color}50`, boxShadow: `0 0 12px ${char.color}25` }}>
-                  <Image src={char.image_url} alt={char.name} fill className="object-cover" />
+                  <Image src={char.image_url} alt={char.name} fill className="object-cover" sizes="56px" loading="lazy" />
                 </div>
               ))}
             </div>
@@ -298,7 +298,7 @@ export function ShopScreen({ onClose }: ShopScreenProps) {
               <div key={char.id} className={cn("relative aspect-[3/4] rounded-xl overflow-hidden border", char.css_effect)}
                 style={{ borderColor: `${char.color}30`, background: `linear-gradient(145deg, ${char.color}08, transparent)` }}>
                 <div className="absolute inset-0">
-                  <Image src={char.image_url} alt={char.name} fill className="object-contain object-bottom" style={{ filter: `drop-shadow(0 0 6px ${char.color}25)` }} />
+                  <Image src={char.image_url} alt={char.name} fill className="object-contain object-bottom" sizes="120px" loading="lazy" style={{ filter: `drop-shadow(0 0 6px ${char.color}25)` }} />
                 </div>
                 <div className="absolute top-1.5 right-1.5 rounded-md px-1.5 py-0.5 text-[7px] font-black backdrop-blur-md" style={{ background: `${char.color}30`, color: char.color }}>
                   {Math.round(char.drop_rate * 100)}%

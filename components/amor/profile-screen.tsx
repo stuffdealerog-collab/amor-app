@@ -63,7 +63,7 @@ export function ProfileScreen({ onOpenSettings, onOpenShop, onOpenEdit }: Profil
       <div className="relative shrink-0">
         {profile.banner_url && !profile.banner_url.startsWith("preset:") ? (
           <div className="h-36 relative">
-            <Image src={profile.banner_url} alt="Фон" fill className="object-cover" />
+            <Image src={profile.banner_url} alt="Фон" fill className="object-cover" sizes="430px" priority />
           </div>
         ) : (
           <div className={cn("h-36", getBannerStyle(profile.banner_url).className)} />
@@ -91,7 +91,7 @@ export function ProfileScreen({ onOpenSettings, onOpenShop, onOpenEdit }: Profil
         <div className="relative">
           <div className="h-24 w-24 overflow-hidden rounded-3xl border-[3px] border-amor-pink/30 glow-pink bg-amor-surface-2">
             {profile.avatar_url ? (
-              <Image src={profile.avatar_url} alt="Аватар" width={96} height={96} className="object-cover w-full h-full" />
+              <Image src={profile.avatar_url} alt="Аватар" width={96} height={96} className="object-cover w-full h-full" sizes="96px" priority />
             ) : (
               <div className="h-full w-full flex items-center justify-center text-3xl font-black text-foreground">
                 {profile.name?.[0] ?? "?"}

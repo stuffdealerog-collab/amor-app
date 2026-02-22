@@ -104,7 +104,7 @@ function ImageViewer({ url, onClose }: { url: string; onClose: () => void }) {
       <button onClick={onClose} className="absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full glass active:scale-90">
         <X className="h-5 w-5 text-white" />
       </button>
-      <Image src={url} alt="Фото" fill className="object-contain p-4" onClick={e => e.stopPropagation()} />
+      <Image src={url} alt="Фото" fill className="object-contain p-4" sizes="100vw" onClick={e => e.stopPropagation()} />
     </div>
   )
 }
@@ -374,7 +374,7 @@ export function ChatScreen({ onOpenQuests }: ChatScreenProps) {
             <button onClick={() => setShowUserPreview(true)} className="flex items-center gap-2.5 active:opacity-70 transition-opacity">
               <div className="relative">
                 <div className="relative h-9 w-9 overflow-hidden rounded-full bg-amor-surface-2 flex items-center justify-center text-sm font-bold text-foreground border border-white/8">
-                  {avatarSrc ? <Image src={avatarSrc} alt={name} fill className="object-cover" /> : <span>{name?.[0] ?? "?"}</span>}
+                  {avatarSrc ? <Image src={avatarSrc} alt={name} fill className="object-cover" sizes="36px" /> : <span>{name?.[0] ?? "?"}</span>}
                 </div>
                 {otherUser && <OnlineIndicator userId={otherUser.id} />}
               </div>
@@ -491,7 +491,7 @@ export function ChatScreen({ onOpenQuests }: ChatScreenProps) {
                 className="flex items-center gap-3 rounded-2xl p-2.5 active:bg-amor-surface-2 transition-all">
                 <div className="relative shrink-0">
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amor-surface-2 text-base font-bold text-foreground border border-white/5 overflow-hidden">
-                    {avatarSrc ? <Image src={avatarSrc} alt={displayName} width={48} height={48} className="object-cover w-full h-full" /> : <span>{displayName[0] ?? "?"}</span>}
+                    {avatarSrc ? <Image src={avatarSrc} alt={displayName} width={48} height={48} className="object-cover w-full h-full" sizes="48px" loading="lazy" /> : <span>{displayName[0] ?? "?"}</span>}
                   </div>
                   <OnlineIndicator userId={c.otherUser.id} size="sm" />
                 </div>
@@ -547,7 +547,7 @@ function MessageBubble({ message: m, isMe, onImageTap }: { message: Message; isM
         {m.type === "image" && m.media_url && (
           <button onClick={() => onImageTap(m.media_url!)} className="block w-full active:opacity-80 transition-opacity">
             <div className="relative w-full aspect-[4/3] min-w-[180px]">
-              <Image src={m.media_url} alt="Фото" fill className="object-cover" />
+              <Image src={m.media_url} alt="Фото" fill className="object-cover" sizes="240px" loading="lazy" />
             </div>
           </button>
         )}

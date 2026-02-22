@@ -2,6 +2,7 @@
 
 import { create } from 'zustand'
 import { createClient } from '@/lib/supabase/client'
+import { compressImage } from '@/lib/compress-image'
 import type { Database, AgePool } from '@/lib/supabase/database.types'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
@@ -146,6 +147,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
   uploadAvatar: async (userId, file) => {
     try {
+      file = await compressImage(file)
       const supabase = createClient()
       const ext = file.name.split('.').pop() || 'jpg'
       const ts = Date.now()
@@ -168,6 +170,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
   uploadPhoto: async (userId, file) => {
     try {
+      file = await compressImage(file)
       const supabase = createClient()
       const ext = file.name.split('.').pop() || 'jpg'
       const ts = Date.now()
@@ -190,6 +193,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
   uploadBanner: async (userId, file) => {
     try {
+      file = await compressImage(file)
       const supabase = createClient()
       const ext = file.name.split('.').pop() || 'jpg'
       const ts = Date.now()

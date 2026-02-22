@@ -229,7 +229,7 @@ export function VibeScreen({ onOpenChat }: VibeScreenProps = {}) {
           <div className="relative flex-1 min-h-0 select-none">
             {hasPhotos ? (
               <>
-                <Image src={photos[photoIdx]} alt={card.name} fill className="object-cover pointer-events-none" draggable={false} />
+                <Image src={photos[photoIdx]} alt={card.name} fill className="object-cover pointer-events-none" draggable={false} sizes="(max-width: 430px) 100vw, 430px" priority={photoIdx === 0} />
                 {photos.length > 1 && (
                   <div className="absolute top-2.5 left-3 right-3 flex gap-1 z-20">
                     {photos.map((_, i) => (
