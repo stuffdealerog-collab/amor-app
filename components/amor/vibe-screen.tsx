@@ -148,7 +148,7 @@ export function VibeScreen({ onOpenChat }: VibeScreenProps = {}) {
         <div className="relative flex-1 mx-3 mb-1">
           <SkeletonCard className="absolute inset-0" />
         </div>
-        <div className="flex items-center justify-center gap-4 py-3 px-4 shrink-0" style={{ paddingBottom: "calc(var(--bottomnav-h) + 8px)" }}>
+        <div className="flex items-center justify-center gap-4 py-3 px-4 shrink-0" style={{ paddingBottom: "calc(var(--bottomnav-h) + 24px)" }}>
           <div className="h-[52px] w-[52px] rounded-2xl shimmer bg-white/5" />
           <div className="h-[60px] w-[60px] rounded-[22px] shimmer bg-amor-pink/10" />
           <div className="h-[52px] w-[52px] rounded-2xl shimmer bg-white/5" />
@@ -239,7 +239,7 @@ export function VibeScreen({ onOpenChat }: VibeScreenProps = {}) {
             <span className="text-lg font-black text-destructive tracking-wider">SKIP</span>
           </div>
 
-          <div className="relative flex-1 min-h-0 select-none">
+          <div className="relative z-10 flex-1 min-h-0 select-none">
             {hasPhotos ? (
               <>
                 <Image src={photos[photoIdx]} alt={card.name} fill className="object-cover pointer-events-none" draggable={false} sizes="(max-width: 430px) 100vw, 430px" priority={photoIdx === 0} />
@@ -434,7 +434,7 @@ export function VibeScreen({ onOpenChat }: VibeScreenProps = {}) {
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-4 py-3 px-4 shrink-0" style={{ paddingBottom: "calc(var(--bottomnav-h) + 8px)" }}>
+      <div className="flex items-center justify-center gap-4 py-3 px-4 shrink-0" style={{ paddingBottom: "calc(var(--bottomnav-h) + 24px)" }}>
         <button onClick={() => doSwipe("l")} className="flex h-[52px] w-[52px] items-center justify-center rounded-2xl glass active:scale-90 transition-all border border-white/8" aria-label="Пропустить">
           <X className="h-5 w-5 text-muted-foreground" />
         </button>

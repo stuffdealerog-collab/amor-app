@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+        "target": "esnext",
+        "module": "esnext",
+        "moduleResolution": "node",
+        "lib": [
+            "deno.window",
+            "deno.ns"
+        ],
+        "strict": true,
+        "esModuleInterop": true,
+        "allowJs": true
+    }
+}

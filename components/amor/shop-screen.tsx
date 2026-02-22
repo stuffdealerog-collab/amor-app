@@ -70,7 +70,7 @@ export function ShopScreen({ onClose }: ShopScreenProps) {
   const [promoLoading, setPromoLoading] = useState(false)
   const [freeChestAvailable, setFreeChestAvailable] = useState(false)
   const [countdown, setCountdown] = useState("")
-  const timerRef = useRef<ReturnType<typeof setInterval>>()
+  const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
 
   const { user } = useAuthStore()
   const { activeCollection, characters, fetchActiveCollection, fetchOwnedCharacters, canClaimFreeChest, claimFreeChest } = useCharactersStore()

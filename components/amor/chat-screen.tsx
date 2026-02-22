@@ -243,9 +243,9 @@ export function ChatScreen({ onOpenQuests }: ChatScreenProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
-  const timerRef = useRef<ReturnType<typeof setInterval>>()
+  const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
   const streamRef = useRef<MediaStream | null>(null)
-  const typingTimerRef = useRef<ReturnType<typeof setTimeout>>()
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const { user } = useAuthStore()
   const {
