@@ -132,10 +132,8 @@
 
 /* ── Safe Area ────────────────────────────── */
 
-@supports (padding: env(safe-area-inset-top)) {
-  .safe-top { padding-top: env(safe-area-inset-top); }
-  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-}
+.safe-top { height: env(safe-area-inset-top, 0px); }
+.safe-bottom { height: env(safe-area-inset-bottom, 0px); }
 
 /* ── Layout Utilities ─────────────────────── */
 
