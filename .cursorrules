@@ -4,13 +4,14 @@ You are working on **Amor**, a social PWA for users aged 6–21. Before making a
 
 ## Project Context
 
-- **Type:** Progressive Web App (single-page)
+- **Type:** Progressive Web App (single-page), deployed on Vercel
 - **Framework:** Next.js 16 (App Router), TypeScript, React 19
 - **Styling:** Tailwind CSS v4 with custom design system in `app/globals.css`
 - **State:** Zustand stores in `lib/stores/`
-- **Backend:** Supabase (Auth, PostgreSQL, Realtime, Storage, Edge Functions)
+- **Backend:** Supabase (Auth, PostgreSQL, Realtime, Presence, Storage, Edge Functions)
 - **Voice:** LiveKit Cloud for Discord-style voice rooms
 - **Language:** UI is in Russian (ru). Code comments and variable names in English.
+- **Production URL:** https://amor-app-gamma.vercel.app/
 
 ## Architecture Rules
 
@@ -21,20 +22,24 @@ You are working on **Amor**, a social PWA for users aged 6–21. Before making a
 
 ### State Management
 - All state goes through **Zustand stores** in `lib/stores/`. Never use React Context or prop drilling for shared state.
-- Stores: `auth`, `profile`, `match`, `chat`, `rooms`, `quests`, `characters`, `stars`.
+- Stores: `auth`, `profile`, `match`, `chat`, `rooms`, `quests`, `characters`, `stars`, `notifications`, `presence`, `promo`.
 - Each store creates a Supabase client via `createClient()` from `lib/supabase/client.ts` (singleton).
 - `auth` store: Email OTP sign-in, Russian error messages via `mapAuthError()`, resend cooldown (60s).
-- `profile` store: `profileLoaded` flag distinguishes "not loaded yet" from "doesn't exist". Uses `.maybeSingle()` for graceful handling. Has `uploadVoiceBio()` and `reset()` methods.
+- `profile` store: `profileLoaded` flag distinguishes "not loaded yet" from "doesn't exist". Has `uploadAvatar()`, `uploadPhoto()`, `uploadBanner()`, `uploadVoiceBio()`, `removePhoto()`, `reset()` methods.
+- `chat` store: Optimistic message insert with temp IDs. Realtime subscriptions for INSERT and UPDATE (read receipts). Typing indicator via Broadcast. `sendImage()` compresses before upload. `sendVoice()` for voice messages.
+- `match` store: Skip cooldown — skipped users reappear after 2 days. Likes/superlikes excluded permanently. Throttle on swipe actions (400ms).
+- `notifications` store: Aggregates matches + unread messages. Read state persisted via localStorage (`amor_notif_seen`). Realtime subscription for new matches/messages.
+- `presence` store: Supabase Realtime Presence. Tracks online users via `amor-presence` channel. Auto-disconnect on logout/close.
 
 ### Supabase
 - Browser client: `lib/supabase/client.ts` — singleton, used in all stores and client components.
 - Server client: `lib/supabase/server.ts` — used in server components and route handlers.
 - Database types: `lib/supabase/database.types.ts` — must stay in sync with the schema.
-- Schema: `supabase/migrations/001_initial_schema.sql` — single migration file.
+- Schema: `supabase/migrations/001_initial_schema.sql` — base schema. `002_add_music_columns.sql` — patches for existing DBs.
 - RLS is enabled on ALL tables. Every query runs as the authenticated user.
-- `get_my_age_pool()` — `SECURITY DEFINER` function to bypass RLS circular dependency in `profiles_select_same_pool` policy.
-- Realtime subscriptions are on: `messages`, `room_messages`, `room_members`, `matches`.
-- Storage buckets: `avatars` (profile photos), `voice-bios` (voice bio recordings).
+- Storage buckets: `avatars` (profile photos + banners), `voice-bios` (voice bio recordings), `chat-media` (photos + voice messages in chats).
+- Storage RLS policies allow authenticated upload to all buckets, public read.
+- Realtime subscriptions: `messages` (INSERT + UPDATE), `room_messages`, `room_members`, `matches`.
 
 ### File Organization
 ```
@@ -42,17 +47,31 @@ components/amor/    → Feature screens and UI components
 components/ui/      → shadcn/ui primitives (do not modify)
 lib/stores/         → Zustand stores (one per domain)
 lib/supabase/       → Supabase client helpers and database.types.ts
+lib/sanitize.ts     → Input sanitization (stripTags, message/name/bio limits)
+lib/compress-image.ts → Client-side JPEG compression (max 1200px, quality 0.7)
 supabase/functions/ → Deno Edge Functions
-supabase/migrations/→ SQL schema
+supabase/migrations/→ SQL schema + patches
 public/sw.js        → Service Worker (disabled on localhost)
+public/manifest.json→ PWA manifest
 ```
 
+### Safe Area (Notched Phones)
+- CSS variables `--sat` and `--sab` map to `env(safe-area-inset-top/bottom)`.
+- `--topbar-h = calc(56px + --sat)`, `--bottomnav-h = calc(68px + --sab)`.
+- All tab screens use `style={{ paddingTop: "var(--topbar-h)" }}` instead of `pt-14`.
+- All modal headers use `style={{ paddingTop: "calc(var(--sat) + 12px)" }}`.
+- TopBar: `style={{ paddingTop: "var(--sat)" }}`.
+- BottomNav: `style={{ paddingBottom: "var(--sab)" }}`.
+- Chat input: `style={{ paddingBottom: "calc(var(--sab) + 12px)" }}`.
+- Viewport: `viewport-fit: cover` in `layout.tsx`.
+
 ### Key Component Files
-- `voice-recorder.tsx` — `VoiceRecorder` (record + preview) and `VoiceBioPlayer` (playback in profile). Uses AudioContext, not `<audio>`.
-- `onboarding-screen.tsx` — 5-step profile setup: welcome → name+age+bio → photo+voice → interests → music DNA.
-- `auth-screen.tsx` — Email OTP with resend cooldown, auto-focus, Enter key support.
-- `profile-screen.tsx` — Displays bio, voice bio player, music DNA (genres, artists, Yandex link).
-- `settings-screen.tsx` — Accepts `onLogout` callback for clean logout (signOut + resetProfile).
+- `vibe-screen.tsx` — Full-bleed swipe cards. Touch + mouse drag. Tap left/right to switch photos. Details modal overlay. Character full-body display (35% opacity). Fallback for no-photo users.
+- `chat-screen.tsx` — Chat list with search, unread badges, online dots. Inside chat: text, image, voice messages. Read receipts (Check/CheckCheck). Typing indicator. Voice recording. Image compression. User profile preview modal.
+- `edit-profile-screen.tsx` — Photo grid (6 max), banner picker (10 presets + custom upload), bio, interests, music DNA. `getBannerStyle()` exported for profile-screen.
+- `shop-screen.tsx` — Free chest with 72h timer, video placeholder, drop rates visualization, character grid with % chances, promo code input.
+- `box-opening-screen.tsx` — 4-phase gacha animation with rarity-specific VFX (Mythic: rumble + confetti + rays; Legendary: surge + scanlines; Epic: aura + pulse; Rare: simple reveal).
+- `pwa-install-prompt.tsx` — PWA install instructions for iOS/Android/desktop. Shows once, dismissed via localStorage.
 
 ## Coding Standards
 
@@ -63,142 +82,55 @@ public/sw.js        → Service Worker (disabled on localhost)
 
 ### React
 - All components are client components (`"use client"` directive).
-- Use `useEffect` for side effects, `useCallback` for stable references, `useRef` for DOM.
+- Use `useEffect` for side effects, `useCallback` for stable references, `useMemo` for expensive computations.
 - Do NOT use `React.FC`. Use plain function declarations with typed props.
 - Prefer `cn()` from `lib/utils` for conditional class composition.
 
+### Security
+- Input sanitization via `lib/sanitize.ts`: `sanitizeMessage()`, `sanitizeName()`, `sanitizeBio()` — strips HTML tags, enforces length limits.
+- Image compression via `lib/compress-image.ts` — JPEG, max 1200px, quality 0.7.
+- DB constraints enforce max lengths: messages 2000, name 30, bio 200.
+- Swipe throttle: 400ms between swipes to prevent double-tap.
+- All storage uploads use unique paths with timestamps + random suffixes for cache-busting.
+
 ### Styling
 - Use Tailwind CSS utility classes. Custom CSS is in `app/globals.css`.
-- The design is **always dark theme** — the `:root` in `app/globals.css` defines dark colors directly.
-- Custom utility classes to use:
-  - `glass`, `glass-raised`, `glass-strong` — frosted glass backgrounds
-  - `grad-pink`, `grad-cyan`, `grad-sunset`, `grad-gold`, `grad-purple` — gradients
-  - `glow-pink`, `glow-cyan`, `glow-gold`, `glow-purple` — box-shadow glows
-  - `text-grad-pink`, `text-grad-rainbow`, `text-grad-sunset` — gradient text
-  - `anim-*` — animation classes (fade-up, scale-in, slide-up, etc.)
-  - `stagger`, `stagger-fast` — sequential child animations
-- Custom CSS variables: `--amor-pink`, `--amor-cyan`, `--amor-gold`, `--amor-purple`, `--amor-orange`, `--amor-blue`
-- Card border radius: `var(--card-r)` (20px), `var(--card-r-lg)` (24px)
-- Layout: `var(--topbar-h)` (56px), `var(--bottomnav-h)` (68px), `var(--screen-px)` (16px)
+- The design is **always dark theme** — `:root` in `app/globals.css` defines dark colors directly.
+- Custom classes: `glass`, `glass-raised`, `glass-strong`, `grad-pink/cyan/sunset/gold/purple`, `glow-*`, `text-grad-*`, `anim-*`, `banner-*`.
+- Card radius: `var(--card-r)` (20px), `var(--card-r-lg)` (24px).
+- Layout: `var(--topbar-h)`, `var(--bottomnav-h)`, `var(--screen-px)` (16px).
 
 ### Naming
-- Component files: `kebab-case.tsx` (e.g., `vibe-screen.tsx`)
-- Store files: `kebab-case.ts` matching domain (e.g., `match.ts`)
+- Component files: `kebab-case.tsx`
+- Store files: `kebab-case.ts`
 - Functions/variables: `camelCase`
 - CSS classes: `kebab-case`
 - DB tables: `snake_case`
-- Enums (DB): `snake_case` for enum types, `PascalCase` for character rarity values
 
 ### Error Handling
 - Supabase queries: always destructure `{ data, error }`. Log errors with `console.warn`.
-- User-facing errors: show in UI (e.g., `setError(error.message)`).
-- Non-critical failures (like character handout): wrap in try/catch, log, and continue.
+- User-facing errors: show in UI with auto-dismiss (3-4 seconds).
+- All async store methods wrapped in try/catch.
 
-## Design Patterns
-
-### Audio Recording & Playback
-- **Recording:** Use `MediaRecorder` API. Preferred MIME: `audio/webm;codecs=opus`. Do NOT use `timeslice` param in `.start()` — collect all data in `onstop`.
-- **Playback:** Use `Web Audio API` (`AudioContext` → `decodeAudioData` → `AudioBufferSourceNode`). Do NOT use `<audio>` elements — they have `display: none` issues with Tailwind's `hidden` class and browser default `audio:not([controls])` rule.
-- **AudioContext lifecycle:** Always `await ctx.resume()` before `source.start()`. Clone ArrayBuffer with `.slice(0)` before `decodeAudioData` (it detaches the buffer).
-- **Validation:** After decoding, check peak amplitude of channel data. If peak < 0.001, the recording is silent.
-- **Progress tracking:** Use `requestAnimationFrame` loop with `ctx.currentTime - startTime`.
-- **File:** `components/amor/voice-recorder.tsx` exports `VoiceRecorder` and `VoiceBioPlayer`.
-
-### File Upload (Photos)
-- Use transparent `<input type="file">` overlay positioned absolutely over the visual button area (`opacity: 0, position: absolute, inset: 0, zIndex: 20`).
-- Do NOT rely on `ref.click()` with hidden inputs — can fail in mobile browsers and Chrome device emulation.
-- Do NOT use `className="hidden"` on file inputs — `display: none` prevents clicks in some contexts.
-
-### Service Worker
-- Service Worker (`public/sw.js`) is **automatically disabled on localhost** — `layout.tsx` unregisters all service workers and clears CacheStorage on localhost/127.0.0.1.
-- Service Worker only registers in production.
-- **Warning:** During development, if a service worker was previously registered, it can cache stale JavaScript bundles and prevent code changes from taking effect. Always check Application > Service Workers in DevTools if changes aren't reflected.
-
-### Screen Components
-Every screen follows this pattern:
-```tsx
-"use client"
-import { useAuthStore } from "@/lib/stores/auth"
-// ... other stores
-
-export function ScreenName({ onClose }: Props) {
-  const { user } = useAuthStore()
-  // ... hooks and state
-
-  if (loading) return <Loader2 spinner />
-  if (!data) return <EmptyState />
-
-  return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-background">
-      {/* Header */}
-      {/* Content */}
-      {/* Footer/Actions */}
-    </div>
-  )
-}
-```
-
-### Z-index Layers
+## Z-index Layers
 - `z-40` — TopBar
 - `z-50` — BottomNav
 - `z-60` — Chat overlay
-- `z-100` — Full-screen modals (auth, onboarding, settings, shop, quests, notifications)
-- `z-200` — Box opening animation
-
-### Age Pool System
-Users are segregated into 3 pools: `kids` (6-12), `teens` (13-17), `young_adults` (18-21).
-- Computed automatically via DB trigger from `profiles.age`
-- RLS restricts profile visibility to same pool
-- Rooms are filtered by pool
-- Voice token generation validates pool match
-
-## Important Constraints
-
-1. **Age rating 0+:** No adult content, explicit language, or inappropriate features.
-2. **Privacy first:** AI moderation badges exist but moderation logic is not yet implemented.
-3. **Mobile-first:** Max width `max-w-md` (448px). All touch interactions use `active:scale-*`.
-4. **Offline:** Basic PWA caching via Service Worker. Critical features need network.
-5. **Performance:** `images.unoptimized: true` in next.config — images are local, not CDN-optimized.
-6. **No SSR data fetching:** All data fetching happens client-side through Zustand stores.
-
-## Common Tasks
-
-### Adding a new screen
-1. Create `components/amor/new-screen.tsx`
-2. Add state to relevant store or create new one in `lib/stores/`
-3. Wire into `page.tsx` (as modal overlay or new tab)
-
-### Adding a DB table
-1. Add SQL to `supabase/migrations/001_initial_schema.sql`
-2. Add types to `lib/supabase/database.types.ts` (keep in sync!)
-3. Enable RLS with appropriate policies
-4. Add to Realtime publication if needed
-5. For existing DBs: provide a separate SQL patch (ALTER TABLE) for users who already ran the initial migration
-
-### Adding a Zustand store
-1. Create `lib/stores/name.ts`
-2. Import `createClient` from `@/lib/supabase/client`
-3. Define interface with state + actions
-4. Export `useNameStore = create<State>(...)`
-
-### Modifying the design system
-- All custom CSS lives in `app/globals.css` (NOT `styles/globals.css`)
-- Add new colors to both `:root` variables and `@theme inline` block
-- Add new animations as `@keyframes` + `.anim-*` utility class
+- `z-100` — Full-screen modals (auth, onboarding, settings, shop, quests, notifications, edit-profile)
+- `z-150` — User profile preview in chat
+- `z-200` — Box opening animation, image viewer
+- `z-300` — PWA install prompt
 
 ## Do NOT
 
 - Do NOT modify `components/ui/` files (shadcn primitives)
 - Do NOT create new pages in `app/` (single-page architecture)
-- Do NOT use `getServerSideProps` or `getStaticProps` (App Router)
 - Do NOT use React Context for state (use Zustand)
 - Do NOT hardcode Supabase URLs or keys (use env vars)
 - Do NOT skip RLS when adding tables
 - Do NOT use `styles/globals.css` — it's a leftover, use `app/globals.css`
-- Do NOT add comments that just narrate what code does
-- Do NOT use emojis in code or comments unless it's user-facing Russian text
-- Do NOT use `<audio>` elements for playback — use AudioContext API instead (Tailwind/browser CSS hides audio elements)
-- Do NOT use `className="hidden"` on `<input type="file">` — use transparent overlay pattern instead
-- Do NOT use `ref.click()` for file inputs — unreliable in mobile browsers; use transparent input overlay
-- Do NOT forget to `await audioContext.resume()` before playing — contexts start suspended
-- Do NOT forget to clone ArrayBuffer (`.slice(0)`) before `decodeAudioData` — it detaches the original
+- Do NOT use `<audio>` elements for playback — use AudioContext API
+- Do NOT use `className="hidden"` on `<input type="file">` — use transparent overlay pattern
+- Do NOT use `pt-14` for topbar offset — use `style={{ paddingTop: "var(--topbar-h)" }}`
+- Do NOT use hardcoded safe area values — use CSS vars `--sat`, `--sab`
+- Do NOT store user input without sanitization — use `lib/sanitize.ts`
