@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
-import { Star, Sparkles, ChevronLeft, Loader2, Gift, Clock, Tag, Check, X, Lock } from "lucide-react"
+import { Star, Sparkles, ChevronLeft, Loader2, Gift, Clock, Tag, Check, X, Lock, Play } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { RARITY_CONFIG } from "./collection-data"
 import { BoxOpeningScreen } from "./box-opening-screen"
@@ -29,6 +29,39 @@ const RARITY_DROP_RATES = [
   { rarity: "Epic", label: "EPIC", color: "#9061f9", rate: 18 },
   { rarity: "Rare", label: "RARE", color: "#3e8bff", rate: 75 },
 ]
+
+function VideoSection() {
+  const [playing, setPlaying] = useState(false)
+  const videoUrl = ""
+
+  return (
+    <div className="rounded-2xl glass overflow-hidden border border-white/5">
+      <div className="relative aspect-video bg-amor-surface-2">
+        {playing && videoUrl ? (
+          <video
+            src={videoUrl}
+            autoPlay
+            controls
+            playsInline
+            className="w-full h-full object-cover"
+            onEnded={() => setPlaying(false)}
+          />
+        ) : (
+          <button onClick={() => videoUrl && setPlaying(true)} className="absolute inset-0 flex flex-col items-center justify-center group">
+            <div className="absolute inset-0 bg-gradient-to-br from-amor-pink/15 via-amor-purple/10 to-amor-cyan/8" />
+            <div className="relative z-10 flex flex-col items-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/10 backdrop-blur-md border border-white/15 mb-3 group-active:scale-90 transition-all">
+                <Play className="h-6 w-6 text-white ml-0.5" />
+              </div>
+              <p className="text-[13px] font-bold text-white/90">Что такое персонажи?</p>
+              <p className="text-[10px] text-white/50 mt-0.5">Смотри видео</p>
+            </div>
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
 
 export function ShopScreen({ onClose }: ShopScreenProps) {
   const [showBoxOpening, setShowBoxOpening] = useState(false)
@@ -234,6 +267,9 @@ export function ShopScreen({ onClose }: ShopScreenProps) {
             </div>
           </div>
         </div>
+
+        {/* Video */}
+        <VideoSection />
 
         {/* Drop Rates */}
         <div className="rounded-2xl glass p-4 border border-white/5">

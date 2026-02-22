@@ -14,8 +14,8 @@ export const metadata: Metadata = {
   generator: 'Amor App',
   manifest: '/manifest.json',
   icons: {
-    icon: '/images/amor-logo.png',
-    apple: '/images/amor-logo.png',
+    icon: '/images/amor-icon-pwa.png',
+    apple: '/images/amor-icon-pwa.png',
   },
   appleWebApp: {
     capable: true,
@@ -33,6 +33,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({

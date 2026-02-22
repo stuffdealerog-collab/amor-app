@@ -46,16 +46,23 @@ export const useRoomsStore = create<RoomsState>((set, get) => ({
       .select('*')
       .eq('age_pool', agePool)
 
-    if (!rooms) { set({ rooms: [], loading: false }); return }
+    if (!rooms?.length) { set({ rooms: [], loading: false }); return }
 
-    const roomsWithCount: RoomWithCount[] = []
-    for (const room of rooms) {
-      const { count } = await supabase
-        .from('room_members')
-        .select('*', { count: 'exact', head: true })
-        .eq('room_id', room.id)
-      roomsWithCount.push({ ...room, memberCount: count ?? 0 })
+    const roomIds = rooms.map(r => r.id)
+    const { data: members } = await supabase
+      .from('room_members')
+      .select('room_id')
+      .in('room_id', roomIds)
+
+    const countMap = new Map<string, number>()
+    for (const m of members ?? []) {
+      countMap.set(m.room_id, (countMap.get(m.room_id) ?? 0) + 1)
     }
+
+    const roomsWithCount: RoomWithCount[] = rooms.map(room => ({
+      ...room,
+      memberCount: countMap.get(room.id) ?? 0,
+    }))
 
     set({ rooms: roomsWithCount, loading: false })
   },

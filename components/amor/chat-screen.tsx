@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import Image from "next/image"
 import { Search, Sparkles, ChevronLeft, Send, Mic, Camera, ShieldCheck, Trophy, Loader2, Play, Pause, X, Check, CheckCheck, Music, ExternalLink } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -345,9 +345,12 @@ export function ChatScreen({ onOpenQuests }: ChatScreenProps) {
     setRecording(false)
   }, [])
 
-  const filteredChats = searchQuery.trim()
-    ? chats.filter(c => c.otherUser.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : chats
+  const filteredChats = useMemo(() =>
+    searchQuery.trim()
+      ? chats.filter(c => c.otherUser.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      : chats,
+    [chats, searchQuery]
+  )
 
   if (viewImage) return <ImageViewer url={viewImage} onClose={() => setViewImage(null)} />
 

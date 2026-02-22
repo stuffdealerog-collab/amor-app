@@ -52,11 +52,18 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     try {
       const supabase = createClient()
 
-      const { data: swipedIds } = await supabase
+      const { data: swipedData } = await supabase
         .from('swipes')
-        .select('swiped_id')
+        .select('swiped_id, action, created_at')
         .eq('swiper_id', userId)
-      const excluded = (swipedIds ?? []).map(s => s.swiped_id)
+
+      const twoDaysAgo = new Date(Date.now() - 2 * 24 * 3600000)
+      const excluded = (swipedData ?? [])
+        .filter(s => {
+          if (s.action === 'like' || s.action === 'superlike') return true
+          return new Date(s.created_at) > twoDaysAgo
+        })
+        .map(s => s.swiped_id)
       excluded.push(userId)
 
       let query = supabase
@@ -107,6 +114,9 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   swipe: async (swiperId, swipedId, action, myInterests) => {
+    if ((get() as any)._swiping) return
+    ;(set as any)({ _swiping: true })
+    setTimeout(() => (set as any)({ _swiping: false }), 400)
     const supabase = createClient()
     await supabase.from('swipes').insert({ swiper_id: swiperId, swiped_id: swipedId, action })
 

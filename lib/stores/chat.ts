@@ -3,6 +3,7 @@
 import { create } from 'zustand'
 import { createClient } from '@/lib/supabase/client'
 import { compressImage } from '@/lib/compress-image'
+import { sanitizeMessage } from '@/lib/sanitize'
 import type { Database } from '@/lib/supabase/database.types'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 
@@ -213,10 +214,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   sendMessage: async (matchId, senderId, content) => {
+    const clean = sanitizeMessage(content)
+    if (!clean) return
     const tempId = `temp-${Date.now()}`
     const tempMsg: Message = {
       id: tempId, match_id: matchId, sender_id: senderId,
-      content, type: 'text', media_url: null, read_at: null,
+      content: clean, type: 'text', media_url: null, read_at: null,
       created_at: new Date().toISOString(),
     }
     set(s => ({ activeMessages: [...s.activeMessages, tempMsg] }))
@@ -224,7 +227,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     try {
       const supabase = createClient()
       const { error } = await supabase.from('messages').insert({
-        match_id: matchId, sender_id: senderId, content, type: 'text',
+        match_id: matchId, sender_id: senderId, content: clean, type: 'text',
       })
       if (error) {
         console.warn('[chat] sendMessage error:', error.message)

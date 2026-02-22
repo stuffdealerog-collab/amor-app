@@ -14,7 +14,7 @@ export function TopBar({ onOpenNotifications }: TopBarProps) {
   return (
     <header className="fixed top-0 left-0 right-0 z-40">
       <div className="mx-auto max-w-md">
-        <div className="flex h-14 items-center justify-between px-4 bg-gradient-to-b from-background/90 via-background/60 to-transparent backdrop-blur-sm">
+        <div className="flex h-14 items-center justify-between px-4 bg-gradient-to-b from-background/90 via-background/60 to-transparent backdrop-blur-sm safe-top">
           <Image
             src="/images/amor-logo.png"
             alt="Amor"

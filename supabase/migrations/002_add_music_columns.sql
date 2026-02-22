@@ -94,5 +94,11 @@ CREATE POLICY "promo_codes_read" ON promo_codes FOR SELECT TO authenticated USIN
 CREATE POLICY "promo_redemptions_read" ON promo_redemptions FOR SELECT USING (user_id = auth.uid());
 CREATE POLICY "promo_redemptions_insert" ON promo_redemptions FOR INSERT WITH CHECK (user_id = auth.uid());
 
+-- Data integrity constraints
+ALTER TABLE messages ADD CONSTRAINT IF NOT EXISTS msg_content_len CHECK (length(content) <= 2000);
+ALTER TABLE profiles ADD CONSTRAINT IF NOT EXISTS profile_name_len CHECK (length(name) <= 30);
+ALTER TABLE profiles ADD CONSTRAINT IF NOT EXISTS profile_bio_len CHECK (length(bio) <= 200);
+ALTER TABLE room_messages ADD CONSTRAINT IF NOT EXISTS room_msg_len CHECK (length(content) <= 2000);
+
 -- After running this, go to Supabase Dashboard:
 -- Settings > API > "Reload schema" (or wait ~1 min for auto-refresh)
