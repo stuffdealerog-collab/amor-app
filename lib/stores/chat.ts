@@ -196,12 +196,23 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }))
     try {
       const supabase = createClient()
-      await supabase
+      const { data } = await supabase
         .from('messages')
         .update({ read_at: new Date().toISOString() })
         .eq('match_id', matchId)
         .neq('sender_id', myUserId)
         .is('read_at', null)
+        .select()
+
+      // Update local messages with read_at so sender sees double check
+      if (data?.length) {
+        const readIds = new Set(data.map((m: any) => m.id))
+        set(s => ({
+          activeMessages: s.activeMessages.map(m =>
+            readIds.has(m.id) ? { ...m, read_at: new Date().toISOString() } : m
+          )
+        }))
+      }
     } catch (e) {
       console.warn('[chat] markAsRead error:', e)
     }

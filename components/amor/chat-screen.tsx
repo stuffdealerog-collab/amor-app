@@ -53,7 +53,7 @@ function VoiceMessagePlayer({ url }: { url: string }) {
   }, [url])
 
   const stop = useCallback(() => {
-    try { sourceRef.current?.stop() } catch {}
+    try { sourceRef.current?.stop() } catch { }
     sourceRef.current = null
     cancelAnimationFrame(rafRef.current)
     setPlaying(false)
@@ -275,7 +275,7 @@ export function ChatScreen({ onOpenQuests }: ChatScreenProps) {
     if (user && val.trim()) {
       clearTimeout(typingTimerRef.current)
       sendTyping(user.id)
-      typingTimerRef.current = setTimeout(() => {}, 2000)
+      typingTimerRef.current = setTimeout(() => { }, 2000)
     }
   }, [user, sendTyping])
 
@@ -339,7 +339,7 @@ export function ChatScreen({ onOpenQuests }: ChatScreenProps) {
 
   const cancelRecording = useCallback(() => {
     clearInterval(timerRef.current)
-    try { recorderRef.current?.stop() } catch {}
+    try { recorderRef.current?.stop() } catch { }
     streamRef.current?.getTracks().forEach(t => t.stop())
     chunksRef.current = []
     setRecording(false)
@@ -365,8 +365,8 @@ export function ChatScreen({ onOpenQuests }: ChatScreenProps) {
     }
 
     return (
-      <div className="fixed inset-0 z-[60] flex flex-col bg-background anim-fade-in">
-        <div className="flex items-center justify-between px-3 py-2 shrink-0 border-b border-white/5 bg-background" style={{ paddingTop: "calc(var(--sat) + 8px)" }}>
+      <div className="fixed inset-x-0 top-0 z-[60] flex flex-col bg-background anim-fade-in" style={{ height: "100dvh" }}>
+        <div className="flex items-center justify-between px-3 py-2 shrink-0 border-b border-white/5 bg-background z-10" style={{ paddingTop: "calc(var(--sat) + 8px)" }}>
           <div className="flex items-center gap-2.5">
             <button onClick={closeChat} className="flex h-9 w-9 items-center justify-center rounded-xl glass active:scale-95 transition-all">
               <ChevronLeft className="h-5 w-5 text-foreground" />
@@ -484,7 +484,7 @@ export function ChatScreen({ onOpenQuests }: ChatScreenProps) {
             const displayName = c.otherUser.name || "?"
             const lastContent = c.lastMessage?.type === 'image' ? '📷 Фото'
               : c.lastMessage?.type === 'voice' ? '🎤 Голосовое'
-              : c.lastMessage?.content || "Начните разговор!"
+                : c.lastMessage?.content || "Начните разговор!"
 
             return (
               <button key={c.match.id} onClick={() => user && openChat(c.match.id, user.id)}
