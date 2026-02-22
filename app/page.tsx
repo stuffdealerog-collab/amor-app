@@ -65,23 +65,24 @@ export default function AmorApp() {
               let sub = await reg.pushManager.getSubscription()
               if (!sub) {
                 const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-                if (vapidKey) {
-                  const urlB64ToUint8Array = (base64String: string) => {
-                    const padding = '='.repeat((4 - base64String.length % 4) % 4)
-                    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/')
-                    const rawData = window.atob(base64)
-                    const outputArray = new Uint8Array(rawData.length)
-                    for (let i = 0; i < rawData.length; ++i) {
-                      outputArray[i] = rawData.charCodeAt(i)
-                    }
-                    return outputArray
+                if (!vapidKey) throw new Error("VAPID key missing in environment variables (NEXT_PUBLIC_VAPID_PUBLIC_KEY)")
+
+                const urlB64ToUint8Array = (base64String: string) => {
+                  const padding = '='.repeat((4 - base64String.length % 4) % 4)
+                  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+                  const rawData = window.atob(base64)
+                  const outputArray = new Uint8Array(rawData.length)
+                  for (let i = 0; i < rawData.length; ++i) {
+                    outputArray[i] = rawData.charCodeAt(i)
                   }
-                  sub = await reg.pushManager.subscribe({
-                    userVisibleOnly: true,
-                    applicationServerKey: urlB64ToUint8Array(vapidKey)
-                  })
+                  return outputArray
                 }
+                sub = await reg.pushManager.subscribe({
+                  userVisibleOnly: true,
+                  applicationServerKey: urlB64ToUint8Array(vapidKey)
+                })
               }
+
               if (sub) {
                 const p256dh = sub.getKey('p256dh') ? btoa(String.fromCharCode(...new Uint8Array(sub.getKey('p256dh')!))) : ''
                 const auth = sub.getKey('auth') ? btoa(String.fromCharCode(...new Uint8Array(sub.getKey('auth')!))) : ''
