@@ -68,8 +68,9 @@ export default function AmorApp() {
                 if (!vapidKey) throw new Error("VAPID key missing in environment variables (NEXT_PUBLIC_VAPID_PUBLIC_KEY)")
 
                 const urlB64ToUint8Array = (base64String: string) => {
-                  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-                  const base64 = (base64String + padding)
+                  const cleanString = base64String.replace(/[\s\r\n]+/g, '');
+                  const padding = '='.repeat((4 - cleanString.length % 4) % 4);
+                  const base64 = (cleanString + padding)
                     .replace(/\-/g, '+')
                     .replace(/_/g, '/');
 
