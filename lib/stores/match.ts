@@ -76,7 +76,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
         .limit(20)
 
       if (excluded.length > 0) {
-        query = query.not('id', 'in', `(${excluded.map(id => `"${id}"`).join(',')})`)
+        query = query.not('id', 'in', `(${excluded.join(',')})`)
       }
 
       const { data: profiles, error } = await query
@@ -87,6 +87,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
         return
       }
 
+      console.log('[match] fetchCards:', { agePool, excluded: excluded.length, found: profiles?.length ?? 0 })
       if (!profiles?.length) { set({ cards: [], loading: false }); return }
 
       const charIds = profiles.map(p => p.equipped_character_id).filter(Boolean) as string[]
