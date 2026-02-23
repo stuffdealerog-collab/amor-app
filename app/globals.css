@@ -880,7 +880,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 1;
   pointer-events: none;
   background: linear-gradient(135deg,
       transparent 20%,
@@ -918,7 +918,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 1;
   pointer-events: none;
   background: repeating-linear-gradient(0deg,
       transparent,
@@ -979,7 +979,7 @@
   left: -10%;
   right: -10%;
   height: 60%;
-  z-index: 2;
+  z-index: 1;
   pointer-events: none;
   background: radial-gradient(ellipse at 50% 100%, rgba(144, 97, 249, 0.2) 0%, transparent 70%);
   animation: flame-pulse 2.5s ease-in-out infinite;
@@ -1010,7 +1010,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 1;
   pointer-events: none;
   background:
     radial-gradient(2px 2px at 20% 30%, rgba(255, 200, 48, 0.6), transparent),
@@ -1054,7 +1054,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 1;
   pointer-events: none;
   background:
     radial-gradient(1.5px 1.5px at 25% 25%, rgba(255, 94, 148, 0.7), transparent),
@@ -1099,7 +1099,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 1;
   pointer-events: none;
   background:
     radial-gradient(ellipse at 0% 100%, rgba(29, 240, 184, 0.15) 0%, transparent 50%),
