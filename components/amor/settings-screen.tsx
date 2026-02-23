@@ -98,18 +98,20 @@ export function SettingsScreen({ onClose, onLogout, onOpenEdit }: SettingsScreen
       let sub = await reg.pushManager.getSubscription()
       const supabase = createClient()
 
-      if (sub) {
+      if (!checked && sub) {
         // Unsubscribe
         const endpoint = sub.endpoint
         await sub.unsubscribe()
         await supabase.from('push_subscriptions').delete().match({ user_id: user.id, endpoint: endpoint })
         setPushEnabled(false)
-      } else {
+        setTestPushStatus("Отписка успешна! ✅")
+      } else if (checked && !sub) {
         // Subscribe
         const permission = await Notification.requestPermission()
         if (permission !== 'granted') {
           alert('Вы не дали разрешение на уведомления.')
           setPushLoading(false)
+          setTestPushStatus("Разрешение не получено ❌")
           return
         }
 
@@ -125,6 +127,7 @@ export function SettingsScreen({ onClose, onLogout, onOpenEdit }: SettingsScreen
           console.error("subscribe error", e)
           alert(`Ошибка подписки: ${e.message}`)
           setPushLoading(false)
+          setTestPushStatus(`Ошибка подписки: ${e.message} ❌`)
           return
         }
 
@@ -140,12 +143,34 @@ export function SettingsScreen({ onClose, onLogout, onOpenEdit }: SettingsScreen
           auth_key: auth
         } as any)
         setPushEnabled(true)
+        setTestPushStatus("Подписка успешна! ✅")
       }
     } catch (e) {
       console.error('[WebPush] Error toggling:', e)
       alert('Ошибка настройки уведомлений: ' + (e as Error).message)
+      setTestPushStatus(`Ошибка: ${(e as Error).message} ❌`)
     } finally {
       setPushLoading(false)
+    }
+  }
+
+  const handleTestPush = async () => {
+    if (!user) return
+    setTestPushStatus("Отправка пуша...")
+    try {
+      const supabase = createClient()
+      const { data, error } = await supabase.functions.invoke('send-push', {
+        body: {
+          targetUserId: user.id,
+          title: "Amor 💖",
+          body: "Тестовое Web Push уведомление успешно доставлено!",
+          url: "/settings"
+        }
+      })
+      if (error) throw error
+      setTestPushStatus(data.success ? "Уведомление отправлено! 🚀" : "Ошибка сервера: " + JSON.stringify(data.error))
+    } catch (e: any) {
+      setTestPushStatus(`Ошибка отправки: ${e.message}`)
     }
   }
 
@@ -279,22 +304,25 @@ export function SettingsScreen({ onClose, onLogout, onOpenEdit }: SettingsScreen
               </div>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />
             </button>
-            <div className="flex items-center justify-between p-3.5 border-b border-white/5">
-              <div className="flex items-center gap-2.5">
-                <Bell className="h-[18px] w-[18px] text-foreground" />
-                <span className="text-[14px] font-bold text-foreground">Уведомления</span>
+            <div className="p-3.5 border-b border-white/5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <Bell className="h-[18px] w-[18px] text-foreground" />
+                  <span className="text-[14px] font-bold text-foreground">Уведомления</span>
+                </div>
+                <Switch checked={pushEnabled} onCheckedChange={handlePushToggle} disabled={pushLoading} />
               </div>
-              <button
-                onClick={handleTogglePush}
-                disabled={pushLoading}
-                className={cn(
-                  "relative flex h-6 w-11 items-center rounded-full transition-all flex-shrink-0 focus:outline-none",
-                  pushEnabled ? "bg-amor-cyan" : "bg-white/10",
-                  pushLoading && "opacity-50 cursor-not-allowed grayscale"
-                )}
-              >
-                <div className={cn("absolute h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-all", pushEnabled ? "left-[22px]" : "left-[3px]")} />
-              </button>
+              {testPushStatus && (
+                <p className="mt-2 text-xs text-zinc-400 font-mono break-words bg-zinc-900/50 p-2 rounded-lg border border-zinc-800/50">{testPushStatus}</p>
+              )}
+              {pushEnabled && (
+                <button
+                  onClick={handleTestPush}
+                  className="mt-3 w-full py-2 bg-pink-500/10 hover:bg-pink-500/20 text-pink-500 rounded-xl text-sm font-medium transition-colors"
+                >
+                  Отправить тестовый Push
+                </button>
+              )}
             </div>
             <div className="p-3.5">
               <div className="flex items-center gap-2.5">

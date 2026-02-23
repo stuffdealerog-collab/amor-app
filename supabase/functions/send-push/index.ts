@@ -61,6 +61,8 @@ serve(async (req) => {
             url: url || '/'
         });
 
+        console.log(`[push] Found ${subscriptions.length} subs for user ${targetUserId}. Sending payload:`, payload);
+
         const sendPromises = subscriptions.map(async (sub) => {
             const pushSubscription = {
                 endpoint: sub.endpoint,
@@ -72,10 +74,13 @@ serve(async (req) => {
 
             try {
                 await webpush.sendNotification(pushSubscription, payload);
+                console.log(`[push] Success for sub ID: ${sub.id}`);
                 return { success: true, id: sub.id };
             } catch (err) {
+                console.error(`[push] Error for sub ID: ${sub.id}`, err);
                 // If the subscription is no longer valid (e.g. 410 Gone), remove it from DB
                 if ((err as any).statusCode === 404 || (err as any).statusCode === 410) {
+                    console.log(`[push] Deleting expired sub ID: ${sub.id}`);
                     await supabase.from('push_subscriptions').delete().eq('id', sub.id);
                     return { success: false, id: sub.id, error: "Subscription expired and removed" };
                 }
