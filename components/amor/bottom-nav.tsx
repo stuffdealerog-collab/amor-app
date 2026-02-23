@@ -1,6 +1,6 @@
 "use client"
 
-import { Sparkles, LayoutGrid, MessageCircle, User } from "lucide-react"
+import { Sparkles, LayoutGrid, MessageCircle, User, Feather } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useChatStore } from "@/lib/stores/chat"
 
@@ -10,6 +10,7 @@ import { usePathname } from "next/navigation"
 const tabs = [
   { id: "feed", path: "/", icon: Sparkles, label: "Вайб" },
   { id: "rooms", path: "/rooms", icon: LayoutGrid, label: "Комнаты" },
+  { id: "thoughts", path: "/thoughts", icon: Feather, label: "Мысли" },
   { id: "chats", path: "/chats", icon: MessageCircle, label: "Чаты" },
   { id: "profile", path: "/profile", icon: User, label: "Профиль" },
 ]

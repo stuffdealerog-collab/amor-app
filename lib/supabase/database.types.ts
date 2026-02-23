@@ -162,6 +162,55 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['messages']['Insert']>
         Relationships: []
       }
+      thoughts: {
+        Row: {
+          id: string
+          user_id: string
+          content: string
+          image_url: string | null
+          likes_count: number
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['thoughts']['Row'], 'id' | 'created_at' | 'likes_count'> & {
+          id?: string
+          created_at?: string
+          likes_count?: number
+        }
+        Update: Partial<Database['public']['Tables']['thoughts']['Insert']>
+        Relationships: [
+          {
+            foreignKeyName: "thoughts_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      thought_likes: {
+        Row: {
+          thought_id: string
+          user_id: string
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['thought_likes']['Row'], 'created_at'> & {
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['thought_likes']['Insert']>
+        Relationships: [
+          {
+            foreignKeyName: "thought_likes_thought_id_fkey"
+            columns: ["thought_id"]
+            referencedRelation: "thoughts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thought_likes_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       rooms: {
         Row: {
           id: string
