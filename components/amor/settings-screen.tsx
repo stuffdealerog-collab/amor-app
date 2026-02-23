@@ -69,6 +69,7 @@ export function SettingsScreen({ onClose, onLogout, onOpenEdit }: SettingsScreen
 
   const [pushEnabled, setPushEnabled] = useState(false)
   const [pushLoading, setPushLoading] = useState(true)
+  const [testPushStatus, setTestPushStatus] = useState<string | null>(null)
 
   useEffect(() => {
     // Check initial push subscription status
@@ -85,7 +86,7 @@ export function SettingsScreen({ onClose, onLogout, onOpenEdit }: SettingsScreen
     checkSub()
   }, [])
 
-  const handleTogglePush = async () => {
+  const handlePushToggle = async (checked: boolean) => {
     if (!user) return
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
       alert("Ваш браузер или ОС не поддерживают Push-уведомления (iOS: добавьте на экран Домой).")
@@ -310,7 +311,17 @@ export function SettingsScreen({ onClose, onLogout, onOpenEdit }: SettingsScreen
                   <Bell className="h-[18px] w-[18px] text-foreground" />
                   <span className="text-[14px] font-bold text-foreground">Уведомления</span>
                 </div>
-                <Switch checked={pushEnabled} onCheckedChange={handlePushToggle} disabled={pushLoading} />
+                <button
+                  onClick={() => handlePushToggle(!pushEnabled)}
+                  disabled={pushLoading}
+                  className={cn(
+                    "relative flex h-6 w-11 items-center rounded-full transition-all flex-shrink-0 focus:outline-none",
+                    pushEnabled ? "bg-amor-cyan" : "bg-white/10",
+                    pushLoading && "opacity-50 cursor-not-allowed grayscale"
+                  )}
+                >
+                  <div className={cn("absolute h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-all", pushEnabled ? "left-[22px]" : "left-[3px]")} />
+                </button>
               </div>
               {testPushStatus && (
                 <p className="mt-2 text-xs text-zinc-400 font-mono break-words bg-zinc-900/50 p-2 rounded-lg border border-zinc-800/50">{testPushStatus}</p>
