@@ -155,6 +155,21 @@ export const useChatStore = create<ChatState>((set, get) => ({
           })
         }
       })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'matches' }, (payload) => {
+        const deletedMatchId = payload.old.id
+        if (!deletedMatchId) return
+
+        set(s => {
+          // If the chat doesn't exist in our list, do nothing
+          if (!s.chats.some(c => c.match.id === deletedMatchId)) return s
+
+          return {
+            chats: s.chats.filter(c => c.match.id !== deletedMatchId),
+            activeMatchId: s.activeMatchId === deletedMatchId ? null : s.activeMatchId,
+            activeMessages: s.activeMatchId === deletedMatchId ? [] : s.activeMessages,
+          }
+        })
+      })
       .subscribe()
     set({ listChannel })
   },
