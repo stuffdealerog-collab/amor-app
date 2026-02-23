@@ -283,19 +283,26 @@ export function VibeScreen({ onOpenChat }: VibeScreenProps = {}) {
               </div>
             </div>
 
+
             {card.character && (
-              <div className="absolute bottom-0 right-0 z-10 pointer-events-none w-[45%] h-[60%]">
-                <Image
-                  src={card.character.image_url}
-                  alt={card.character.name}
-                  fill
-                  className="object-contain object-bottom"
-                  style={{ filter: `drop-shadow(0 0 15px ${charColor}40)`, opacity: 0.35 }}
-                />
-                <div className="absolute top-2 right-2">
-                  <div className="rounded-full px-2 py-0.5 text-[7px] font-black uppercase backdrop-blur-md"
-                    style={{ background: `${charColor}30`, color: charColor, boxShadow: `0 0 8px ${charColor}25` }}>
-                    {RARITY_CONFIG[card.character.rarity as keyof typeof RARITY_CONFIG]?.label || card.character.rarity}
+              <div className="absolute bottom-[88px] right-3 z-20 pointer-events-none">
+                <div className="flex items-center gap-2 rounded-xl backdrop-blur-xl px-2 py-1.5 border border-white/10"
+                  style={{ background: `${charColor}15`, boxShadow: `0 0 12px ${charColor}20` }}>
+                  <div className="relative h-9 w-9 rounded-lg overflow-hidden shrink-0 border border-white/15"
+                    style={{ boxShadow: `0 0 8px ${charColor}30` }}>
+                    <Image
+                      src={card.character.image_url}
+                      alt={card.character.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-0.5 pr-1">
+                    <span className="text-[10px] font-bold text-white/90 leading-tight truncate max-w-[70px]">{card.character.name}</span>
+                    <span className="text-[8px] font-black uppercase leading-tight"
+                      style={{ color: charColor }}>
+                      {RARITY_CONFIG[card.character.rarity as keyof typeof RARITY_CONFIG]?.label || card.character.rarity}
+                    </span>
                   </div>
                 </div>
               </div>
