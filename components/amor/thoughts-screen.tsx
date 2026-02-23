@@ -257,6 +257,13 @@ export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
                 {loading && thoughts.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20">
                         <Loader2 className="h-8 w-8 text-amor-pink animate-spin mb-4" />
+                        <p className="text-muted-foreground text-sm">Загрузка мыслей...</p>
+                    </div>
+                ) : thoughts.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-center px-8">
+                        <Feather className="h-12 w-12 text-amor-pink/30 mb-4" />
+                        <h3 className="text-lg font-bold text-foreground mb-2">Пока тихо...</h3>
+                        <p className="text-muted-foreground text-sm">Будьте первым, кто поделится мыслью! Напишите что-нибудь в поле выше ☝️</p>
                     </div>
                 ) : (
                     <div className="divide-y divide-white/5">

@@ -61,10 +61,15 @@ export const useThoughtsStore = create<ThoughtsState>()((set, get) => ({
                 .order('created_at', { ascending: false })
                 .limit(50)
 
-            if (thoughtsError) throw thoughtsError
+            if (thoughtsError) {
+                console.error('[thoughts] fetchThoughts query error:', thoughtsError)
+                throw thoughtsError
+            }
+
+            console.log('[thoughts] fetched:', thoughtsData?.length ?? 0, 'thoughts')
 
             let formattedThoughts: ThoughtWithAuthor[] = (thoughtsData as any) || []
-            formattedThoughts = formattedThoughts.filter(t => t.author) // Ensure author exists (FK constraint should handle it, but just in case)
+            formattedThoughts = formattedThoughts.filter(t => t.author)
 
             if (currentUserId && formattedThoughts.length > 0) {
                 const thoughtIds = formattedThoughts.map(t => t.id)
@@ -83,7 +88,7 @@ export const useThoughtsStore = create<ThoughtsState>()((set, get) => ({
 
             set({ thoughts: formattedThoughts, loading: false })
         } catch (err: any) {
-            console.error('Error fetching thoughts:', err)
+            console.error('[thoughts] Error fetching thoughts:', err)
             set({ error: err.message, loading: false })
         }
     },
@@ -133,13 +138,26 @@ export const useThoughtsStore = create<ThoughtsState>()((set, get) => ({
 
     createThought: async (userId, content, imageUrl, videoUrl) => {
         const supabase = createClient()
-        const { error } = await supabase.from('thoughts').insert({
+
+        const insertData: any = {
             user_id: userId,
             content,
             image_url: imageUrl || null,
-            video_url: videoUrl || null
-        })
-        return { error: error?.message || null }
+        }
+        // Only include video_url if provided (column may not exist if 003 migration hasn't been applied)
+        if (videoUrl) insertData.video_url = videoUrl
+
+        const { error } = await supabase.from('thoughts').insert(insertData)
+
+        if (error) {
+            console.error('[thoughts] createThought error:', error)
+            return { error: error.message }
+        }
+
+        // Refresh feed after posting (don't rely solely on Realtime)
+        get().fetchThoughts(userId)
+
+        return { error: null }
     },
 
     deleteThought: async (thoughtId) => {
