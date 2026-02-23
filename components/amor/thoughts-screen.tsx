@@ -33,7 +33,7 @@ function formatTimeAgo(dateString: string): string {
 export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
     const { user } = useAuthStore()
     const { profile } = useProfileStore()
-    const { thoughts, loading, fetchThoughts, fetchRecommendedThoughts, createThought, toggleLike, toggleDislike, viewThought, subscribeToThoughts, unsubscribeFromThoughts, searchHashtags } = useThoughtsStore()
+    const { thoughts, loading, error: feedError, fetchThoughts, fetchRecommendedThoughts, createThought, toggleLike, toggleDislike, viewThought, subscribeToThoughts, unsubscribeFromThoughts, searchHashtags } = useThoughtsStore()
     const { swipe } = useMatchStore()
 
     const [feedType, setFeedType] = useState<'recent' | 'foryou'>('recent')
@@ -165,6 +165,14 @@ export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
                         </button>
                     </div>
                 </div>
+
+                {/* Debug banner — remove after fixing */}
+                {(feedError || (!loading && thoughts.length === 0)) && (
+                    <div className="mx-4 mt-2 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-[12px] text-yellow-300 font-mono">
+                        <p>🔍 Debug: user={user?.id ? '✅' : '❌'} | profile={profile?.name || '❌'} | loading={String(loading)} | count={thoughts.length}</p>
+                        {feedError && <p className="text-red-400 mt-1">❌ Feed error: {feedError}</p>}
+                    </div>
+                )}
             </div>
 
             <div className="flex-1 overflow-y-auto w-full no-scrollbar pb-[100px]">
