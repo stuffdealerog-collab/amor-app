@@ -1,9 +1,9 @@
-// @ts-nocheck
+
 "use client"
 
 import { create } from 'zustand'
 import { createClient } from '@/lib/supabase/client'
-import type { Database, SwipeAction } from '@/lib/supabase/database.types'
+import type { Database, SwipeAction, AgePool } from '@/lib/supabase/database.types'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 type Match = Database['public']['Tables']['matches']['Row']
@@ -72,7 +72,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       let query = supabase
         .from('profiles')
         .select('*')
-        .eq('age_pool', agePool)
+        .eq('age_pool', agePool as AgePool)
         .eq('onboarding_completed', true)
         .limit(20)
 

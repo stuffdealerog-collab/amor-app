@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 "use client"
 
 import { create } from 'zustand'
@@ -67,8 +67,10 @@ export const useQuestsStore = create<QuestsState>((set) => ({
       const { error } = await supabase.from('user_quests').insert({
         user_id: userId,
         quest_id: questId,
-        status: 'active',
+        status: 'active' as const,
         max_progress: maxProgress,
+        partner_id: null,
+        completed_at: null,
       })
       if (error) return { error: error.message }
       return { error: null }

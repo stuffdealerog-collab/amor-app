@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import Image from "next/image"
-import { Search, Sparkles, ChevronLeft, Send, Mic, Camera, ShieldCheck, Trophy, Loader2, Play, Pause, X, Check, CheckCheck, Music, ExternalLink } from "lucide-react"
+import { Search, Sparkles, ChevronLeft, Send, Mic, Camera, ShieldCheck, Trophy, Loader2, Play, Pause, X, Check, CheckCheck, Music, ExternalLink, UserMinus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/lib/stores/auth"
 import { useChatStore } from "@/lib/stores/chat"
@@ -384,6 +384,18 @@ export function ChatScreen({ onOpenQuests }: ChatScreenProps) {
               </div>
             </button>
           </div>
+
+          <button
+            onClick={async () => {
+              if (window.confirm("Удалить этот мэтч? Это действие необратимо и удалит всю переписку.")) {
+                await useChatStore.getState().unmatch(activeMatchId)
+              }
+            }}
+            className="flex h-9 w-9 items-center justify-center rounded-xl glass active:scale-95 transition-all shrink-0 ml-2"
+            title="Удалить мэтч"
+          >
+            <UserMinus className="h-[18px] w-[18px] text-destructive/80" />
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">

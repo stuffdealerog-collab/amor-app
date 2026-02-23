@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 "use client"
 
 import { create } from 'zustand'
@@ -41,6 +41,7 @@ interface ChatState {
   subscribeToList: (userId: string) => void
   unsubscribeFromList: () => void
   getTotalUnread: () => number
+  unmatch: (matchId: string) => Promise<{ error: string | null }>
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -132,6 +133,27 @@ export const useChatStore = create<ChatState>((set, get) => ({
           })
           return { chats: updated }
         })
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'matches' }, async (payload) => {
+        const newMatch = payload.new as Match
+        if (newMatch.user1_id !== userId && newMatch.user2_id !== userId) return
+
+        const otherId = newMatch.user1_id === userId ? newMatch.user2_id : newMatch.user1_id
+        const { data: otherUser } = await supabase.from('profiles').select('*').eq('id', otherId).maybeSingle()
+
+        if (otherUser) {
+          set(s => {
+            if (s.chats.some(c => c.match.id === newMatch.id)) return s
+            const newChat: ChatPreview = { match: newMatch, otherUser, lastMessage: null, unreadCount: 0 }
+            const updated = [newChat, ...s.chats]
+            updated.sort((a, b) => {
+              const aT = a.lastMessage?.created_at ?? a.match.created_at
+              const bT = b.lastMessage?.created_at ?? b.match.created_at
+              return new Date(bT).getTime() - new Date(aT).getTime()
+            })
+            return { chats: updated }
+          })
+        }
       })
       .subscribe()
     set({ listChannel })
@@ -248,11 +270,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
       } else {
         // Find the receiver to send a push notification
         const chat = get().chats.find(c => c.match.id === matchId)
-        if (chat && chat.otherProfile) {
+        if (chat && chat.otherUser) {
           const myName = useProfileStore.getState().profile?.name || 'Amor'
           supabase.functions.invoke('send-push', {
             body: {
-              targetUserId: chat.otherProfile.id,
+              targetUserId: chat.otherUser.id,
               title: `Сообщение от ${myName} 💬`,
               body: clean,
               url: "/chat"
@@ -287,11 +309,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
       // Dispatch push notification
       const chat = get().chats.find(c => c.match.id === matchId)
-      if (chat && chat.otherProfile) {
+      if (chat && chat.otherUser) {
         const myName = useProfileStore.getState().profile?.name || 'Amor'
         supabase.functions.invoke('send-push', {
           body: {
-            targetUserId: chat.otherProfile.id,
+            targetUserId: chat.otherUser.id,
             title: `Фото от ${myName} 📷`,
             body: 'Пользователь отправил вам фото!',
             url: "/chat"
@@ -326,11 +348,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
       // Dispatch push notification
       const chat = get().chats.find(c => c.match.id === matchId)
-      if (chat && chat.otherProfile) {
+      if (chat && chat.otherUser) {
         const myName = useProfileStore.getState().profile?.name || 'Amor'
         supabase.functions.invoke('send-push', {
           body: {
-            targetUserId: chat.otherProfile.id,
+            targetUserId: chat.otherUser.id,
             title: `Голосовое от ${myName} 🎤`,
             body: 'Пользователь отправил вам голосовое сообщение!',
             url: "/chat"
@@ -352,4 +374,22 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   getTotalUnread: () => get().chats.reduce((sum, c) => sum + c.unreadCount, 0),
+
+  unmatch: async (matchId) => {
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.from('matches').delete().eq('id', matchId)
+      if (error) return { error: error.message }
+
+      set(s => ({
+        chats: s.chats.filter(c => c.match.id !== matchId),
+        activeMatchId: s.activeMatchId === matchId ? null : s.activeMatchId,
+        activeMessages: s.activeMatchId === matchId ? [] : s.activeMessages,
+      }))
+      get().closeChat()
+      return { error: null }
+    } catch (e: any) {
+      return { error: e?.message ?? 'Не удалось удалить мэтч' }
+    }
+  },
 }))

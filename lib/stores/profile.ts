@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 "use client"
 
 import { create } from 'zustand'
@@ -92,6 +92,10 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
         music_genres: data.music_genres ?? [],
         favorite_artists: data.favorite_artists ?? [],
         yandex_music_link: data.yandex_music_link ?? null,
+        banner_url: null,
+        last_free_chest: null,
+        equipped_character_id: null,
+        vibe_question: null,
         onboarding_completed: true,
       }
 

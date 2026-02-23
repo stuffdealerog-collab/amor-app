@@ -34,7 +34,7 @@ export function VoiceRecorder({ onRecorded, existingUrl, maxDuration = 30 }: Voi
 
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
-  const timerRef = useRef<ReturnType<typeof setInterval>>()
+  const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
   const streamRef = useRef<MediaStream | null>(null)
   const elapsedRef = useRef(0)
 
@@ -55,7 +55,7 @@ export function VoiceRecorder({ onRecorded, existingUrl, maxDuration = 30 }: Voi
       if (timerRef.current) clearInterval(timerRef.current)
       if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop())
       stopPlayback()
-      if (audioCtxRef.current) audioCtxRef.current.close().catch(() => {})
+      if (audioCtxRef.current) audioCtxRef.current.close().catch(() => { })
       if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -121,7 +121,7 @@ export function VoiceRecorder({ onRecorded, existingUrl, maxDuration = 30 }: Voi
 
   const stopPlayback = useCallback(() => {
     if (sourceNodeRef.current) {
-      try { sourceNodeRef.current.stop() } catch {}
+      try { sourceNodeRef.current.stop() } catch { }
       sourceNodeRef.current.disconnect()
       sourceNodeRef.current = null
     }
@@ -432,17 +432,17 @@ export function VoiceBioPlayer({ url, compact = false }: VoiceBioPlayerProps) {
     return () => {
       cancelled = true
       if (sourceRef.current) {
-        try { sourceRef.current.stop() } catch {}
+        try { sourceRef.current.stop() } catch { }
         sourceRef.current.disconnect()
       }
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
-      if (audioCtxRef.current) audioCtxRef.current.close().catch(() => {})
+      if (audioCtxRef.current) audioCtxRef.current.close().catch(() => { })
     }
   }, [url])
 
   const stopPlayback = useCallback(() => {
     if (sourceRef.current) {
-      try { sourceRef.current.stop() } catch {}
+      try { sourceRef.current.stop() } catch { }
       sourceRef.current.disconnect()
       sourceRef.current = null
     }

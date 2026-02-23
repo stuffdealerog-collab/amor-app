@@ -42,6 +42,7 @@ export interface Database {
           updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>
+        Relationships: []
       }
       collections: {
         Row: {
@@ -55,6 +56,7 @@ export interface Database {
         }
         Insert: Omit<Database['public']['Tables']['collections']['Row'], 'created_at'> & { created_at?: string }
         Update: Partial<Database['public']['Tables']['collections']['Insert']>
+        Relationships: []
       }
       characters: {
         Row: {
@@ -73,6 +75,7 @@ export interface Database {
         }
         Insert: Omit<Database['public']['Tables']['characters']['Row'], 'created_at'> & { created_at?: string }
         Update: Partial<Database['public']['Tables']['characters']['Insert']>
+        Relationships: []
       }
       user_characters: {
         Row: {
@@ -84,12 +87,14 @@ export interface Database {
           equipped: boolean
           obtained_at: string
         }
-        Insert: Omit<Database['public']['Tables']['user_characters']['Row'], 'obtained_at' | 'level' | 'xp'> & {
+        Insert: Omit<Database['public']['Tables']['user_characters']['Row'], 'id' | 'obtained_at' | 'level' | 'xp'> & {
+          id?: string
           level?: number
           xp?: number
           obtained_at?: string
         }
         Update: Partial<Database['public']['Tables']['user_characters']['Insert']>
+        Relationships: []
       }
       swipes: {
         Row: {
@@ -104,6 +109,7 @@ export interface Database {
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['swipes']['Insert']>
+        Relationships: []
       }
       push_subscriptions: {
         Row: {
@@ -119,6 +125,7 @@ export interface Database {
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['push_subscriptions']['Insert']>
+        Relationships: []
       }
       matches: {
         Row: {
@@ -133,6 +140,7 @@ export interface Database {
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['matches']['Insert']>
+        Relationships: []
       }
       messages: {
         Row: {
@@ -152,6 +160,7 @@ export interface Database {
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['messages']['Insert']>
+        Relationships: []
       }
       rooms: {
         Row: {
@@ -170,6 +179,7 @@ export interface Database {
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['rooms']['Insert']>
+        Relationships: []
       }
       room_members: {
         Row: {
@@ -187,6 +197,7 @@ export interface Database {
           joined_at?: string
         }
         Update: Partial<Database['public']['Tables']['room_members']['Insert']>
+        Relationships: []
       }
       room_messages: {
         Row: {
@@ -201,6 +212,7 @@ export interface Database {
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['room_messages']['Insert']>
+        Relationships: []
       }
       quests: {
         Row: {
@@ -219,6 +231,7 @@ export interface Database {
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['quests']['Insert']>
+        Relationships: []
       }
       user_quests: {
         Row: {
@@ -238,6 +251,7 @@ export interface Database {
           started_at?: string
         }
         Update: Partial<Database['public']['Tables']['user_quests']['Insert']>
+        Relationships: []
       }
       stars_transactions: {
         Row: {
@@ -253,6 +267,7 @@ export interface Database {
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['stars_transactions']['Insert']>
+        Relationships: []
       }
       promo_codes: {
         Row: {
@@ -271,6 +286,7 @@ export interface Database {
           created_at?: string
         }
         Update: Partial<Database['public']['Tables']['promo_codes']['Insert']>
+        Relationships: []
       }
       promo_redemptions: {
         Row: {
@@ -284,8 +300,10 @@ export interface Database {
           redeemed_at?: string
         }
         Update: Partial<Database['public']['Tables']['promo_redemptions']['Insert']>
+        Relationships: []
       }
     }
+    Views: Record<string, never>
     Functions: {
       increment_stars: {
         Args: { p_user_id: string; p_amount: number; p_reason?: string }
@@ -302,6 +320,10 @@ export interface Database {
       redeem_promo: {
         Args: { p_user_id: string; p_code: string }
         Returns: { success: boolean; message: string; type?: string; value?: string; balance?: number }
+      }
+      delete_user_account: {
+        Args: { target_user_id: string }
+        Returns: void
       }
     }
     Enums: {

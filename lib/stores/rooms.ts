@@ -1,10 +1,10 @@
-// @ts-nocheck
+
 "use client"
 
 import { create } from 'zustand'
 import { createClient } from '@/lib/supabase/client'
 import { sanitizeMessage } from '@/lib/sanitize'
-import type { Database, RoomCategory } from '@/lib/supabase/database.types'
+import type { Database, RoomCategory, AgePool } from '@/lib/supabase/database.types'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 
 type Room = Database['public']['Tables']['rooms']['Row']
@@ -46,7 +46,7 @@ export const useRoomsStore = create<RoomsState>((set, get) => ({
     const { data: rooms } = await supabase
       .from('rooms')
       .select('*')
-      .eq('age_pool', agePool)
+      .eq('age_pool', agePool as AgePool)
 
     if (!rooms?.length) { set({ rooms: [], loading: false }); return }
 
