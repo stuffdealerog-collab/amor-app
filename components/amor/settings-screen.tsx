@@ -139,7 +139,7 @@ export function SettingsScreen({ onClose, onLogout, onOpenEdit }: SettingsScreen
           endpoint: sub.endpoint,
           p256dh_key: p256dh,
           auth_key: auth
-        } as any)
+        } as any, { onConflict: 'user_id,endpoint' })
         setPushEnabled(true)
       }
     } catch (e) {
