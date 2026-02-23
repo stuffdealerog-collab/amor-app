@@ -33,7 +33,7 @@ function formatTimeAgo(dateString: string): string {
 export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
     const { user } = useAuthStore()
     const { profile } = useProfileStore()
-    const { thoughts, loading, error: feedError, fetchThoughts, fetchRecommendedThoughts, createThought, toggleLike, toggleDislike, viewThought, subscribeToThoughts, unsubscribeFromThoughts, searchHashtags } = useThoughtsStore()
+    const { thoughts, loading, error: feedError, fetchThoughts, fetchRecommendedThoughts, createThought, updateThought, deleteThought, toggleLike, toggleDislike, viewThought, subscribeToThoughts, unsubscribeFromThoughts, searchHashtags } = useThoughtsStore()
     const { swipe } = useMatchStore()
 
     const [feedType, setFeedType] = useState<'recent' | 'foryou'>('recent')
@@ -92,18 +92,28 @@ export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
         const isVideo = file.type.startsWith('video/')
 
         setUploadingMedia(true)
-        const supabase = createClient()
-        const fileName = `${user.id}/${Date.now()}_${file.name}`
+        try {
+            const supabase = createClient()
+            const ext = file.name.split('.').pop() || 'jpg'
+            const fileName = `thoughts/${user.id}/${Date.now()}.${ext}`
 
-        const { data, error } = await supabase.storage.from("chat_media").upload(fileName, file)
+            const { data, error } = await supabase.storage.from('chat_media').upload(fileName, file, { upsert: true })
 
-        if (!error && data) {
-            const { data: { publicUrl } } = supabase.storage.from("chat_media").getPublicUrl(data.path)
-            if (isVideo) setComposerVideo(publicUrl)
-            else setComposerImage(publicUrl)
+            if (error) {
+                console.error('[thoughts] upload error:', error)
+                alert(`Ошибка загрузки: ${error.message}`)
+            } else if (data) {
+                const { data: { publicUrl } } = supabase.storage.from('chat_media').getPublicUrl(data.path)
+                if (isVideo) setComposerVideo(publicUrl)
+                else setComposerImage(publicUrl)
+            }
+        } catch (err: any) {
+            console.error('[thoughts] upload exception:', err)
+            alert(`Ошибка загрузки: ${err.message}`)
         }
 
         setUploadingMedia(false)
+        if (fileInputRef.current) fileInputRef.current.value = ''
     }
 
     const handleTextChange = async (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -290,6 +300,19 @@ export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
                                     else setSelectedProfile(thought.author)
                                 }}
                                 onOpenComments={() => setSelectedThoughtForComments(thought.id)}
+                                onDelete={async () => {
+                                    if (confirm('Удалить эту мысль?')) {
+                                        const { error } = await deleteThought(thought.id)
+                                        if (error) alert(`Ошибка: ${error}`)
+                                    }
+                                }}
+                                onEdit={async () => {
+                                    const newContent = prompt('Изменить мысль:', thought.content)
+                                    if (newContent !== null && newContent.trim() !== thought.content) {
+                                        const { error } = await updateThought(thought.id, newContent.trim())
+                                        if (error) alert(`Ошибка: ${error}`)
+                                    }
+                                }}
                             />
                         ))}
                     </div>
@@ -324,16 +347,21 @@ function ThoughtCard({
     onLike,
     onRequestMatch,
     onOpenProfile,
-    onOpenComments
+    onOpenComments,
+    onDelete,
+    onEdit
 }: {
     thought: ThoughtWithAuthor,
     currentUserId?: string,
     onLike: () => void,
     onRequestMatch: () => void,
     onOpenProfile: () => void,
-    onOpenComments: () => void
+    onOpenComments: () => void,
+    onDelete: () => void,
+    onEdit: () => void
 }) {
     const { toggleDislike, viewThought } = useThoughtsStore()
+    const [showMenu, setShowMenu] = useState(false)
     const isMe = thought.user_id === currentUserId;
     const authorPhoto = thought.author.avatar_url || thought.author.photos?.[0]
 
@@ -367,9 +395,20 @@ function ThoughtCard({
                         </span>
                     </div>
                     {isMe && (
-                        <button className="h-5 w-5 shrink-0 flex items-center justify-center text-muted-foreground opacity-50 hover:opacity-100">
-                            <MoreHorizontal className="h-4 w-4" />
-                        </button>
+                        <div className="relative">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu) }}
+                                className="h-7 w-7 shrink-0 flex items-center justify-center rounded-full text-muted-foreground hover:bg-white/10 transition-colors"
+                            >
+                                <MoreHorizontal className="h-4 w-4" />
+                            </button>
+                            {showMenu && (
+                                <div className="absolute right-0 top-8 z-30 w-36 bg-amor-surface-2 border border-white/10 rounded-xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+                                    <button onClick={() => { setShowMenu(false); onEdit() }} className="w-full text-left px-4 py-2.5 text-[13px] text-foreground hover:bg-white/5 transition-colors">✏️ Изменить</button>
+                                    <button onClick={() => { setShowMenu(false); onDelete() }} className="w-full text-left px-4 py-2.5 text-[13px] text-red-400 hover:bg-red-500/10 transition-colors">🗑️ Удалить</button>
+                                </div>
+                            )}
+                        </div>
                     )}
                 </div>
 
@@ -411,8 +450,12 @@ function ThoughtCard({
                         <span className="text-[11px] font-bold">{thought.dislikes_count > 0 ? thought.dislikes_count : ''}</span>
                     </button>
 
-                    <button className="flex items-center gap-1.5 h-8 px-2 rounded-full text-muted-foreground hover:bg-white/5 transition-all active:scale-90">
+                    <button
+                        onClick={onOpenComments}
+                        className="flex items-center gap-1.5 h-8 px-2 rounded-full text-muted-foreground hover:bg-white/5 transition-all active:scale-90"
+                    >
                         <MessageCircle className="h-4 w-4" />
+                        <span className="text-[11px] font-bold">{(thought as any).comments_count > 0 ? (thought as any).comments_count : ''}</span>
                     </button>
 
                     <div className="flex items-center gap-1.5 h-8 px-2 text-muted-foreground opacity-70">

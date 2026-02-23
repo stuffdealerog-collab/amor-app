@@ -25,6 +25,7 @@ interface ThoughtsState {
     fetchThoughts: (currentUserId?: string) => Promise<void>
     fetchRecommendedThoughts: (currentUserId: string) => Promise<void>
     createThought: (userId: string, content: string, imageUrl?: string, videoUrl?: string) => Promise<{ error: string | null }>
+    updateThought: (thoughtId: string, content: string) => Promise<{ error: string | null }>
     deleteThought: (thoughtId: string) => Promise<{ error: string | null }>
     toggleLike: (thoughtId: string, userId: string) => Promise<void>
     toggleDislike: (thoughtId: string, userId: string) => Promise<void>
@@ -144,20 +145,41 @@ export const useThoughtsStore = create<ThoughtsState>()((set, get) => ({
             content,
             image_url: imageUrl || null,
         }
-        // Only include video_url if provided (column may not exist if 003 migration hasn't been applied)
         if (videoUrl) insertData.video_url = videoUrl
 
-        const { error } = await supabase.from('thoughts').insert(insertData)
+        const { data: inserted, error } = await supabase.from('thoughts').insert(insertData).select('id').single()
 
         if (error) {
             console.error('[thoughts] createThought error:', error)
             return { error: error.message }
         }
 
-        // Refresh feed after posting (don't rely solely on Realtime)
+        // Extract and save hashtags
+        if (inserted) {
+            const tags = content.match(/#[a-zA-Zа-яА-ЯёЁ0-9_]+/g)
+            if (tags && tags.length > 0) {
+                const uniqueTags = [...new Set(tags.map(t => t.slice(1).toLowerCase()))]
+                for (const tag of uniqueTags) {
+                    try { await supabase.from('thought_hashtags').insert({ thought_id: inserted.id, tag }) } catch { /* dup */ }
+                }
+            }
+        }
+
+        // Refresh feed
         get().fetchThoughts(userId)
 
         return { error: null }
+    },
+
+    updateThought: async (thoughtId, content) => {
+        const supabase = createClient()
+        const { error } = await supabase.from('thoughts').update({ content }).eq('id', thoughtId)
+        if (!error) {
+            set(state => ({
+                thoughts: state.thoughts.map(t => t.id === thoughtId ? { ...t, content } : t)
+            }))
+        }
+        return { error: error?.message || null }
     },
 
     deleteThought: async (thoughtId) => {
