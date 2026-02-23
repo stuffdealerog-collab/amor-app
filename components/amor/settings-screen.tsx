@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Shield, Lock, Bell, User, LogOut, ChevronLeft, ChevronRight, Eye, UserX, AlertTriangle, Moon, Trash2, Loader2 } from "lucide-react"
+import { Shield, Lock, Bell, User, LogOut, ChevronLeft, ChevronRight, Eye, UserX, AlertTriangle, Moon, Trash2, Loader2, Download } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/lib/stores/auth"
 import { useProfileStore } from "@/lib/stores/profile"
 import { useMatchStore } from "@/lib/stores/match"
 import { useChatStore } from "@/lib/stores/chat"
+import { useUIStore } from "@/lib/stores/ui"
 import { createClient } from "@/lib/supabase/client"
 
 function urlB64ToUint8Array(base64String: string) {
@@ -348,6 +349,16 @@ export function SettingsScreen({ onClose, onLogout, onOpenEdit }: SettingsScreen
         <div>
           <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2.5 px-1">Другое</h3>
           <div className="rounded-2xl glass overflow-hidden">
+            <button
+              onClick={() => { onClose(); useUIStore.getState().setShowPwaPrompt(true) }}
+              className="w-full flex items-center justify-between p-3.5 border-b border-white/5 active:bg-white/5 transition-colors"
+            >
+              <div className="flex items-center gap-2.5">
+                <Download className="h-[18px] w-[18px] text-amor-pink" />
+                <span className="text-[14px] font-bold text-foreground">Установить PWA</span>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </button>
             <div className="w-full flex items-center justify-between p-3.5 border-b border-white/5">
               <span className="text-[14px] font-bold text-foreground">О приложении</span>
               <span className="text-[10px] text-muted-foreground">v1.0.0</span>

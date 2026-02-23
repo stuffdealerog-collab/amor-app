@@ -6,12 +6,14 @@ interface UIState {
     showShop: boolean
     showQuests: boolean
     showEditProfile: boolean
+    showPwaPrompt: boolean
 
     setShowNotifications: (show: boolean) => void
     setShowSettings: (show: boolean) => void
     setShowShop: (show: boolean) => void
     setShowQuests: (show: boolean) => void
     setShowEditProfile: (show: boolean) => void
+    setShowPwaPrompt: (show: boolean) => void
 
     closeAll: () => void
 }
@@ -22,18 +24,21 @@ export const useUIStore = create<UIState>((set) => ({
     showShop: false,
     showQuests: false,
     showEditProfile: false,
+    showPwaPrompt: false,
 
     setShowNotifications: (show) => set({ showNotifications: show }),
     setShowSettings: (show) => set({ showSettings: show }),
     setShowShop: (show) => set({ showShop: show }),
     setShowQuests: (show) => set({ showQuests: show }),
     setShowEditProfile: (show) => set({ showEditProfile: show }),
+    setShowPwaPrompt: (show) => set({ showPwaPrompt: show }),
 
     closeAll: () => set({
         showNotifications: false,
         showSettings: false,
         showShop: false,
         showQuests: false,
-        showEditProfile: false
+        showEditProfile: false,
+        showPwaPrompt: false
     })
 }))

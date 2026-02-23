@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { X, Share, Plus, MoreVertical, Download } from "lucide-react"
 import Image from "next/image"
+import { useUIStore } from "@/lib/stores/ui"
 
 function isStandalone(): boolean {
   if (typeof window === "undefined") return false
@@ -21,27 +22,50 @@ function getDeviceType(): "ios" | "android" | "desktop" | null {
 const DISMISSED_KEY = "amor_pwa_dismissed"
 
 export function PwaInstallPrompt() {
-  const [show, setShow] = useState(false)
+  const [internalShow, setInternalShow] = useState(false)
   const [device, setDevice] = useState<"ios" | "android" | "desktop" | null>(null)
   const [canNativeInstall, setCanNativeInstall] = useState(false)
+  const { showPwaPrompt, setShowPwaPrompt } = useUIStore()
 
   useEffect(() => {
-    if (isStandalone()) return
-    try {
-      const dismissed = localStorage.getItem(DISMISSED_KEY)
-      if (dismissed) return
-    } catch { }
     setDevice(getDeviceType())
-    // Check if native install prompt is available (Android Chrome)
+
+    // Handle native install prompt availability dynamically
     if ((window as any).__pwaInstallPrompt) {
       setCanNativeInstall(true)
     }
-    const timer = setTimeout(() => setShow(true), 2000)
-    return () => clearTimeout(timer)
+
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault()
+        ; (window as any).__pwaInstallPrompt = e
+      setCanNativeInstall(true)
+    }
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+
+    // Only run the automatic 2-second timeout if it's not currently shown manually
+    // and hasn't been dismissed, and we are not standalone.
+    let timer: NodeJS.Timeout | undefined;
+    if (!isStandalone()) {
+      let isDismissed = false
+      try {
+        isDismissed = !!localStorage.getItem(DISMISSED_KEY)
+      } catch { }
+
+      if (!isDismissed) {
+        timer = setTimeout(() => setInternalShow(true), 2000)
+      }
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer)
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    }
   }, [])
 
   const dismiss = () => {
-    setShow(false)
+    setInternalShow(false)
+    setShowPwaPrompt(false)
     try { localStorage.setItem(DISMISSED_KEY, "1") } catch { }
   }
 
@@ -56,6 +80,8 @@ export function PwaInstallPrompt() {
     ; (window as any).__pwaInstallPrompt = null
     setCanNativeInstall(false)
   }
+
+  const show = internalShow || showPwaPrompt
 
   if (!show || !device) return null
 
