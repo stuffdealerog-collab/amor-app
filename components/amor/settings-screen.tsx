@@ -11,19 +11,35 @@ import { useChatStore } from "@/lib/stores/chat"
 import { createClient } from "@/lib/supabase/client"
 
 function urlB64ToUint8Array(base64String: string) {
-  const cleanString = base64String.replace(/[\s\r\n]+/g, '');
-  const padding = '='.repeat((4 - cleanString.length % 4) % 4);
-  const base64 = (cleanString + padding)
-    .replace(/\-/g, '+')
-    .replace(/_/g, '/');
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
+  const lookup = new Uint8Array(256)
+  for (let i = 0; i < chars.length; i++) lookup[chars.charCodeAt(i)] = i
 
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
+  // Strip whitespace/padding
+  const str = base64String.replace(/[\s=]/g, '').replace(/\+/g, '-').replace(/\//g, '_')
 
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
+  const len = str.length
+  let bufferLength = len * 0.75
+  const p = (len % 4) ? 4 - (len % 4) : 0
+
+  const array = new Uint8Array(bufferLength)
+  let pIndex = 0
+
+  for (let i = 0; i < len; i += 4) {
+    const encoded1 = lookup[str.charCodeAt(i)]
+    const encoded2 = lookup[str.charCodeAt(i + 1)]
+    const encoded3 = lookup[str.charCodeAt(i + 2)]
+    const encoded4 = lookup[str.charCodeAt(i + 3)]
+
+    array[pIndex++] = (encoded1 << 2) | (encoded2 >> 4)
+    if (encoded3 !== undefined) {
+      array[pIndex++] = ((encoded2 & 15) << 4) | (encoded3 >> 2)
+    }
+    if (encoded4 !== undefined) {
+      array[pIndex++] = ((encoded3 & 3) << 6) | (encoded4 & 63)
+    }
   }
-  return outputArray;
+  return array.slice(0, pIndex)
 }
 
 interface SettingsScreenProps {
