@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { BottomNav } from "@/components/amor/bottom-nav"
 import { TopBar } from "@/components/amor/top-bar"
 import { NotificationsScreen } from "@/components/amor/notifications-screen"
@@ -19,6 +19,7 @@ import { createClient } from "@/lib/supabase/client"
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter()
+    const pathname = usePathname()
     const { user, initialized } = useAuthStore()
     const { profile, profileLoaded, fetchProfile, reset: resetProfile } = useProfileStore()
     const { trackPresence, untrackPresence } = usePresenceStore()
@@ -140,11 +141,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         )
     }
 
+    const hasTopBar = !(pathname === '/profile' || pathname?.startsWith('/chats/'))
+
     return (
-        <div className="relative mx-auto min-h-[100dvh] max-w-md overflow-hidden bg-background">
+        <div className={`relative mx-auto h-[100dvh] max-w-md bg-background flex flex-col pb-[var(--bottomnav-h)] overflow-hidden ${hasTopBar ? "pt-[var(--topbar-h)]" : ""}`}>
             <TopBar />
 
-            <main className="relative min-h-[100dvh]">
+            <main className="relative flex-1 overflow-x-hidden overflow-y-auto scroll-smooth w-full min-h-0">
                 {children}
             </main>
 

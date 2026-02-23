@@ -261,8 +261,8 @@ export function ChatScreen({ onOpenQuests }: ChatScreenProps) {
       fetchChats(user.id)
       subscribeToList(user.id)
     }
-    return () => { unsubscribeFromList(); closeChat() }
-  }, [user, fetchChats, subscribeToList, unsubscribeFromList, closeChat])
+    return () => { unsubscribeFromList() }
+  }, [user, fetchChats, subscribeToList, unsubscribeFromList])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -462,7 +462,7 @@ export function ChatScreen({ onOpenQuests }: ChatScreenProps) {
   }
 
   return (
-    <div className="flex h-[100dvh] flex-col px-4 bg-background" style={{ paddingTop: "var(--topbar-h)" }}>
+    <div className="flex h-full flex-col px-4 bg-background">
       <div className="py-3 shrink-0"><h2 className="text-[17px] font-black text-foreground">Чаты</h2></div>
       <div className="flex-1 overflow-y-auto pb-20">
         <div className="mb-4 rounded-2xl glass glow-inner-pink p-4 border border-amor-pink/15 anim-fade-up">

@@ -57,8 +57,8 @@ export function RoomsScreen() {
     const isBoth = activeRoom.room_type === 'both'
 
     return (
-      <div className="flex h-[100dvh] flex-col bg-background">
-        <div className="flex items-center gap-3 px-4 py-3 shrink-0" style={{ paddingTop: "var(--topbar-h)" }}>
+      <div className="flex h-full flex-col bg-background">
+        <div className="flex items-center gap-3 px-4 py-3 shrink-0">
           <button
             onClick={handleLeave}
             className="flex h-9 w-9 items-center justify-center rounded-xl glass active:scale-95 transition-all"
@@ -138,7 +138,7 @@ export function RoomsScreen() {
     const catRooms = rooms.filter(r => r.category === selectedCat)
 
     return (
-      <div className="flex h-[100dvh] flex-col px-4 bg-background" style={{ paddingTop: "var(--topbar-h)" }}>
+      <div className="flex h-full flex-col px-4 bg-background">
         <div className="flex items-center gap-3 py-3 shrink-0">
           <button
             onClick={() => setSelectedCat(null)}
@@ -198,7 +198,7 @@ export function RoomsScreen() {
   }
 
   return (
-    <div className="flex h-[100dvh] flex-col px-4 bg-background" style={{ paddingTop: "var(--topbar-h)" }}>
+    <div className="flex h-full flex-col px-4 bg-background">
       <div className="py-3 shrink-0 anim-fade-in">
         <h2 className="text-lg font-black text-foreground">Mood Rooms</h2>
         <p className="text-[11px] text-muted-foreground">Выбери свой вайб прямо сейчас</p>

@@ -7,7 +7,7 @@ export default function ProfilePage() {
     const ui = useUIStore()
 
     return (
-        <div className="min-h-screen pb-20">
+        <div className="h-full">
             <ProfileScreen
                 onOpenSettings={() => ui.setShowSettings(true)}
                 onOpenShop={() => ui.setShowShop(true)}
