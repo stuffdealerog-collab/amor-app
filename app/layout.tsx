@@ -37,6 +37,8 @@ export const viewport: Viewport = {
   interactiveWidget: 'resizes-content',
 }
 
+import { AuthProvider } from "@/components/amor/auth-provider"
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -64,7 +66,9 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased">
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
         <Analytics />
       </body>
     </html>

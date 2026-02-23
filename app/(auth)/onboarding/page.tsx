@@ -23,8 +23,19 @@ export default function OnboardingPage() {
         router.push("/")
     }
 
-    // Show nothing while loading to prevent unauthenticated flash
-    if (!initialized || !profileLoaded) return null
+    // Show splash screen while loading to prevent unauthenticated flash
+    if (!initialized || !profileLoaded) {
+        return (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background">
+                <div className="relative">
+                    <div className="absolute inset-0 scale-[2] bg-amor-pink/15 blur-[50px] rounded-full" />
+                    <img src="/images/amor-logo.png" alt="Amor" className="h-11 w-auto object-contain relative z-10 brightness-110" />
+                </div>
+            </div>
+        )
+    }
+
+    // Safety check in case redirect hasn't fired yet
     if (!user || profile?.onboarding_completed) return null
 
     return <OnboardingScreen onComplete={handleComplete} />

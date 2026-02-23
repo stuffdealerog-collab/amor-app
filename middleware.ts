@@ -28,13 +28,16 @@ export async function middleware(request: NextRequest) {
 
   const url = request.nextUrl
   const isAuthRoute = url.pathname.startsWith('/login')
+  const isOnboardingRoute = url.pathname.startsWith('/onboarding')
+  const isPublicRoute = isAuthRoute
 
-  // Protect all other routes except onboarding (we will handle onboarding redirect later)
-  if (!user && !isAuthRoute) {
+  // Protect all other routes
+  if (!user && !isPublicRoute) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
   // If user is logged in and trying to access /login, redirect to home
+  // (We don't redirect to /onboarding here, letting layout.tsx handle the profile fetch and redirect)
   if (user && isAuthRoute) {
     return NextResponse.redirect(new URL('/', request.url))
   }
