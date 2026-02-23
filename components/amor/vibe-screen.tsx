@@ -205,7 +205,6 @@ export function VibeScreen({ onOpenChat }: VibeScreenProps = {}) {
           ref={cardRef}
           className={cn(
             "absolute inset-0 overflow-hidden rounded-[var(--card-r-lg)] flex flex-col border border-white/8",
-            card.character?.css_effect || undefined,
             dir === "l" && "animate-out fade-out slide-out-to-left duration-300 ease-in",
             dir === "r" && "animate-out fade-out slide-out-to-right duration-300 ease-in",
             !dir && !isDragging && "transition-all duration-300 ease-out"
@@ -226,6 +225,10 @@ export function VibeScreen({ onOpenChat }: VibeScreenProps = {}) {
           onMouseLeave={onMouseLeave}
           onClick={tapPhoto}
         >
+          {/* Character CSS effect as an isolated overlay — never touches card positioning */}
+          {card.character?.css_effect && (
+            <div className={cn("absolute inset-0 pointer-events-none z-[1] rounded-[var(--card-r-lg)] overflow-hidden", card.character.css_effect)} />
+          )}
           <div className={cn(
             "absolute top-5 left-4 z-30 rounded-xl border-[3px] border-amor-cyan/90 bg-amor-cyan/10 backdrop-blur-md px-4 py-1 -rotate-12 transition-all duration-200 pointer-events-none",
             offX > 50 ? "opacity-100 scale-110" : "opacity-0 scale-75"
