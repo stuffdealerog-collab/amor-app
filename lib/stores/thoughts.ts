@@ -56,7 +56,7 @@ export const useThoughtsStore = create<ThoughtsState>()((set, get) => ({
                 .from('thoughts')
                 .select(`
           *,
-          author:profiles(*)
+          author:profiles!thoughts_user_id_fkey(*)
         `)
                 .order('created_at', { ascending: false })
                 .limit(50)
@@ -270,7 +270,7 @@ export const useThoughtsStore = create<ThoughtsState>()((set, get) => ({
         const supabase = createClient()
         const { data, error } = await supabase
             .from('thought_comments')
-            .select(`*, author:profiles(*)`)
+            .select(`*, author:profiles!thought_comments_user_id_fkey(*)`)
             .eq('thought_id', thoughtId)
             .order('created_at', { ascending: true })
 
