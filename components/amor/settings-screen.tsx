@@ -69,7 +69,7 @@ export function SettingsScreen({ onClose, onLogout, onOpenEdit }: SettingsScreen
 
   const [pushEnabled, setPushEnabled] = useState(false)
   const [pushLoading, setPushLoading] = useState(true)
-  const [testPushStatus, setTestPushStatus] = useState<string | null>(null)
+
 
   useEffect(() => {
     // Check initial push subscription status
@@ -105,14 +105,12 @@ export function SettingsScreen({ onClose, onLogout, onOpenEdit }: SettingsScreen
         await sub.unsubscribe()
         await supabase.from('push_subscriptions').delete().match({ user_id: user.id, endpoint: endpoint })
         setPushEnabled(false)
-        setTestPushStatus("Отписка успешна! ✅")
       } else if (checked && !sub) {
         // Subscribe
         const permission = await Notification.requestPermission()
         if (permission !== 'granted') {
           alert('Вы не дали разрешение на уведомления.')
           setPushLoading(false)
-          setTestPushStatus("Разрешение не получено ❌")
           return
         }
 
@@ -128,7 +126,6 @@ export function SettingsScreen({ onClose, onLogout, onOpenEdit }: SettingsScreen
           console.error("subscribe error", e)
           alert(`Ошибка подписки: ${e.message}`)
           setPushLoading(false)
-          setTestPushStatus(`Ошибка подписки: ${e.message} ❌`)
           return
         }
 
@@ -144,41 +141,17 @@ export function SettingsScreen({ onClose, onLogout, onOpenEdit }: SettingsScreen
           auth_key: auth
         } as any)
         setPushEnabled(true)
-        setTestPushStatus("Подписка успешна! ✅")
       }
     } catch (e) {
       console.error('[WebPush] Error toggling:', e)
       alert('Ошибка настройки уведомлений: ' + (e as Error).message)
-      setTestPushStatus(`Ошибка: ${(e as Error).message} ❌`)
+
     } finally {
       setPushLoading(false)
     }
   }
 
-  const handleTestPush = async () => {
-    if (!user) return
-    setTestPushStatus("Отправка пуша...")
-    try {
-      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/send-push`
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({
-          targetUserId: user.id,
-          title: "Amor 💖",
-          body: "Тестовое Web Push уведомление успешно доставлено!",
-          url: "/settings"
-        })
-      })
-      const text = await res.text()
-      setTestPushStatus(`HTTP ${res.status}: ${text}`)
-    } catch (e: any) {
-      setTestPushStatus(`Fetch error: ${e.message}`)
-    }
-  }
+
 
   const handleDeleteAccount = async () => {
     if (!user || !profile) return
@@ -328,17 +301,7 @@ export function SettingsScreen({ onClose, onLogout, onOpenEdit }: SettingsScreen
                   <div className={cn("absolute h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-all", pushEnabled ? "left-[22px]" : "left-[3px]")} />
                 </button>
               </div>
-              {testPushStatus && (
-                <p className="mt-2 text-xs text-zinc-400 font-mono break-words bg-zinc-900/50 p-2 rounded-lg border border-zinc-800/50">{testPushStatus}</p>
-              )}
-              {pushEnabled && (
-                <button
-                  onClick={handleTestPush}
-                  className="mt-3 w-full py-2 bg-pink-500/10 hover:bg-pink-500/20 text-pink-500 rounded-xl text-sm font-medium transition-colors"
-                >
-                  Отправить тестовый Push
-                </button>
-              )}
+
             </div>
             <div className="p-3.5">
               <div className="flex items-center gap-2.5">
