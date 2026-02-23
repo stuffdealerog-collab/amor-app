@@ -24,7 +24,20 @@ export async function middleware(request: NextRequest) {
   )
 
   // Refresh session if expired
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const url = request.nextUrl
+  const isAuthRoute = url.pathname.startsWith('/login')
+
+  // Protect all other routes except onboarding (we will handle onboarding redirect later)
+  if (!user && !isAuthRoute) {
+    return NextResponse.redirect(new URL('/login', request.url))
+  }
+
+  // If user is logged in and trying to access /login, redirect to home
+  if (user && isAuthRoute) {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
 
   return supabaseResponse
 }

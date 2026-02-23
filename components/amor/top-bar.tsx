@@ -3,13 +3,17 @@
 import Image from "next/image"
 import { Bell } from "lucide-react"
 import { useNotificationsStore } from "@/lib/stores/notifications"
+import { useUIStore } from "@/lib/stores/ui"
+import { usePathname } from "next/navigation"
 
-interface TopBarProps {
-  onOpenNotifications: () => void
-}
-
-export function TopBar({ onOpenNotifications }: TopBarProps) {
+export function TopBar() {
   const unreadCount = useNotificationsStore(s => s.unreadCount)
+  const setShowNotifications = useUIStore(s => s.setShowNotifications)
+  const pathname = usePathname()
+
+  if (pathname === '/profile' || pathname?.startsWith('/chats/')) {
+    return null
+  }
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40" style={{ paddingTop: "var(--sat)" }}>
@@ -25,7 +29,7 @@ export function TopBar({ onOpenNotifications }: TopBarProps) {
           />
 
           <button
-            onClick={onOpenNotifications}
+            onClick={() => setShowNotifications(true)}
             className="relative flex h-9 w-9 items-center justify-center rounded-xl glass transition-all active:scale-95"
             aria-label="Уведомления"
           >

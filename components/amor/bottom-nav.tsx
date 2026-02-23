@@ -4,20 +4,19 @@ import { Sparkles, LayoutGrid, MessageCircle, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useChatStore } from "@/lib/stores/chat"
 
-interface BottomNavProps {
-  activeTab: string
-  onTabChange: (tab: string) => void
-}
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 
 const tabs = [
-  { id: "feed", icon: Sparkles, label: "Вайб" },
-  { id: "rooms", icon: LayoutGrid, label: "Комнаты" },
-  { id: "chats", icon: MessageCircle, label: "Чаты" },
-  { id: "profile", icon: User, label: "Профиль" },
+  { id: "feed", path: "/", icon: Sparkles, label: "Вайб" },
+  { id: "rooms", path: "/rooms", icon: LayoutGrid, label: "Комнаты" },
+  { id: "chats", path: "/chats", icon: MessageCircle, label: "Чаты" },
+  { id: "profile", path: "/profile", icon: User, label: "Профиль" },
 ]
 
-export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
+export function BottomNav() {
   const chatUnread = useChatStore(s => s.getTotalUnread())
+  const pathname = usePathname()
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl" role="navigation" aria-label="Main navigation"
@@ -25,12 +24,13 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
       <div className="mx-auto max-w-md px-3">
         <div className="flex items-center rounded-2xl glass-strong overflow-hidden mb-1">
           {tabs.map((tab) => {
-            const isActive = activeTab === tab.id
+            const isActive = pathname === tab.path || (tab.path === "/chats" && pathname?.startsWith("/chats"))
             const badge = tab.id === "chats" ? chatUnread : 0
             return (
-              <button
+              <Link
+                href={tab.path}
                 key={tab.id}
-                onClick={() => onTabChange(tab.id)}
+                prefetch={true}
                 className="relative flex flex-1 flex-col items-center justify-center gap-1 py-2.5 transition-all duration-300 active:scale-95"
                 aria-label={tab.label}
                 aria-current={isActive ? "page" : undefined}
@@ -58,7 +58,7 @@ export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
                 )}>
                   {tab.label}
                 </span>
-              </button>
+              </Link>
             )
           })}
         </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import Image from "next/image"
 import { Search, Sparkles, ChevronLeft, Send, Mic, Camera, ShieldCheck, Trophy, Loader2, Play, Pause, X, Check, CheckCheck, Music, ExternalLink, UserMinus } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/lib/stores/auth"
 import { useChatStore } from "@/lib/stores/chat"
@@ -248,6 +249,7 @@ export function ChatScreen({ onOpenQuests }: ChatScreenProps) {
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const { user } = useAuthStore()
+  const router = useRouter()
   const {
     chats, activeMessages, activeMatchId, loading, isOtherTyping,
     fetchChats, openChat, sendMessage, sendImage, sendVoice, sendTyping,
@@ -368,7 +370,7 @@ export function ChatScreen({ onOpenQuests }: ChatScreenProps) {
       <div className="fixed inset-x-0 top-0 z-[60] flex flex-col bg-background anim-fade-in" style={{ height: "100dvh" }}>
         <div className="flex items-center justify-between px-3 py-2 shrink-0 border-b border-white/5 bg-background z-10" style={{ paddingTop: "calc(var(--sat) + 8px)" }}>
           <div className="flex items-center gap-2.5">
-            <button onClick={closeChat} className="flex h-9 w-9 items-center justify-center rounded-xl glass active:scale-95 transition-all">
+            <button onClick={() => router.push('/chats')} className="flex h-9 w-9 items-center justify-center rounded-xl glass active:scale-95 transition-all">
               <ChevronLeft className="h-5 w-5 text-foreground" />
             </button>
             <button onClick={() => setShowUserPreview(true)} className="flex items-center gap-2.5 active:opacity-70 transition-opacity">
@@ -499,7 +501,7 @@ export function ChatScreen({ onOpenQuests }: ChatScreenProps) {
                 : c.lastMessage?.content || "Начните разговор!"
 
             return (
-              <button key={c.match.id} onClick={() => user && openChat(c.match.id, user.id)}
+              <button key={c.match.id} onClick={() => user && router.push(`/chats/${c.match.id}`)}
                 className="flex items-center gap-3 rounded-2xl p-2.5 active:bg-amor-surface-2 transition-all">
                 <div className="relative shrink-0">
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amor-surface-2 text-base font-bold text-foreground border border-white/5 overflow-hidden">
