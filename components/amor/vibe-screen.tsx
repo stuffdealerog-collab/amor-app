@@ -288,13 +288,13 @@ export function VibeScreen({ onOpenChat }: VibeScreenProps = {}) {
               <div className="absolute bottom-[88px] right-3 z-20 pointer-events-none">
                 <div className="flex items-center gap-2 rounded-xl backdrop-blur-xl px-2 py-1.5 border border-white/10"
                   style={{ background: `${charColor}15`, boxShadow: `0 0 12px ${charColor}20` }}>
-                  <div className="relative h-9 w-9 rounded-lg overflow-hidden shrink-0 border border-white/15"
+                  <div className="relative h-9 w-9 rounded-full overflow-hidden shrink-0 border border-white/15"
                     style={{ boxShadow: `0 0 8px ${charColor}30` }}>
                     <Image
                       src={card.character.image_url}
                       alt={card.character.name}
                       fill
-                      className="object-cover"
+                      className="object-cover object-top scale-150"
                     />
                   </div>
                   <div className="flex flex-col gap-0.5 pr-1">
