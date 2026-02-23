@@ -872,7 +872,6 @@
 }
 
 .effect-holo {
-  position: relative;
   overflow: hidden;
 }
 
@@ -910,9 +909,8 @@
 
 /* ── Rarity: Legendary (glitch) ──────────── */
 
-.effect-glitch {
-  position: relative;
-}
+
+
 
 .effect-glitch::after {
   content: '';
@@ -968,7 +966,6 @@
 /* ── Effect: Purple Flame (MAYOT) ────────── */
 
 .effect-flame {
-  position: relative;
   overflow: hidden;
 }
 
@@ -1002,7 +999,6 @@
 /* ── Effect: Gold Drift (MACAN) ──────────── */
 
 .effect-gold {
-  position: relative;
   overflow: hidden;
 }
 
@@ -1091,7 +1087,6 @@
 /* ── Effect: Dark Mist (Тёмный принц) ───── */
 
 .effect-mist {
-  position: relative;
   overflow: hidden;
 }
 
