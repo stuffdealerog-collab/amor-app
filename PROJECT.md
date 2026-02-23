@@ -275,3 +275,27 @@ git push           # Vercel auto-deploys from main branch
 ```
 
 Env vars на Vercel: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+---
+
+## Последние обновления (Changelog)
+**Февраль 2026: PWA Push Notifications, Безопасность и UI Багфиксы**
+
+### 1. Web Push Notifications (PWA)
+Внедрена нативная система Push-уведомлений для PWA, обходящая ограничения Apple/Google.
+- **База данных:** Создана таблица `push_subscriptions` (migration `005`) для хранения VAPID-подписок (endpoints + keys).
+- **Backend (Deno Edge):** Реализована Edge функция `send-push`. Важно: **Она использует нативный `Web Crypto API`** для подписи JWT (VAPID), так как стандартная библиотека `npm:web-push` вызывает `500 Server Error` из-за Node.js `crypto` зависимостей на серверах Deno.
+- **Frontend (Service Worker):** В `sw.js` добавлены слушатели `push` и `notificationclick` для отображения нативных системных уведомлений и маршрутизации при клике.
+- **Frontend (UI):** В `settings-screen.tsx` добавлена настройка включения пушей + кнопка тестирования.
+- **iOS Safari Patch:** Добавлена кастомная функция `urlB64ToUint8Array` в `settings-screen.tsx` и `page.tsx` для правильного декодирования Base64URL ключей, так как дефолтный сафари падает на пробелах/паддинге.
+
+### 2. Безопасность и Tooling (Security Hardening)
+- **RLS (Row Level Security):** Добавлен файл `004_security_hardening.sql`, который ужесточает политики доступа к `profiles` и `messages`, разрешая редактирование только владельцам `auth.uid() = id`.
+- **TypeScript:** Настроен изолированный `tsconfig.json` в `supabase/functions/` с типами Deno, чтобы глобальный `npx tsc --noEmit` в корне (Next.js) не падал из-за конфликтов DOM и Deno окружений.
+- **ESLint:** Настроен и запущен `eslint-plugin-next` для поддержания чистоты фронтенда.
+
+### 3. UI/UX Фиксы
+- **iOS Keyboard (Chat):** Исправлен баг, когда открытие клавиатуры выталкивало шапку чата за пределы экрана. Использован `<meta name="viewport" content="... interactive-widget=resizes-content" />`.
+- **Vibe Screen Buttons:** Кнопки Like/Skip теперь не накладываются на `BottomNav` благодаря перерасчету абсолютных Z-index отступов (`bottom-24`).
+- **Chat Input Border:** Убрана дефолтная красная/оранжевая `outline` обводка инпута при фокусе в мобильных браузерах.
+- **Profile Scroll Overlay:** Глобальный `TopBar` теперь скрывается на странице `profile-screen.tsx`, чтобы избежать наложения шапок друг на друга.

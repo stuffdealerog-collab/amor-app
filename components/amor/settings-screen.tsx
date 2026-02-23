@@ -159,19 +159,24 @@ export function SettingsScreen({ onClose, onLogout, onOpenEdit }: SettingsScreen
     if (!user) return
     setTestPushStatus("Отправка пуша...")
     try {
-      const supabase = createClient()
-      const { data, error } = await supabase.functions.invoke('send-push', {
-        body: {
+      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/send-push`
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
           targetUserId: user.id,
           title: "Amor 💖",
           body: "Тестовое Web Push уведомление успешно доставлено!",
           url: "/settings"
-        }
+        })
       })
-      if (error) throw error
-      setTestPushStatus(data.success ? "Уведомление отправлено! 🚀" : "Ошибка сервера: " + JSON.stringify(data.error))
+      const text = await res.text()
+      setTestPushStatus(`HTTP ${res.status}: ${text}`)
     } catch (e: any) {
-      setTestPushStatus(`Ошибка отправки: ${e.message}`)
+      setTestPushStatus(`Fetch error: ${e.message}`)
     }
   }
 
