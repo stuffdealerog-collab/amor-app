@@ -42,6 +42,7 @@ export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
     const [composerVideo, setComposerVideo] = useState<string | null>(null)
     const [uploadingMedia, setUploadingMedia] = useState(false)
     const [publishing, setPublishing] = useState(false)
+    const [publishError, setPublishError] = useState<string | null>(null)
     const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null)
     const [selectedThoughtForComments, setSelectedThoughtForComments] = useState<string | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -66,14 +67,21 @@ export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
     const handlePublish = async () => {
         if (!user || (!composerContent.trim() && !composerImage && !composerVideo)) return
         setPublishing(true)
+        setPublishError(null)
 
-        const { error } = await createThought(user.id, composerContent.trim(), composerImage || undefined, composerVideo || undefined)
-        if (!error) {
-            setComposerContent("")
-            setComposerImage(null)
-            setComposerVideo(null)
-        } else {
-            console.error(error)
+        try {
+            const { error } = await createThought(user.id, composerContent.trim(), composerImage || undefined, composerVideo || undefined)
+            if (!error) {
+                setComposerContent("")
+                setComposerImage(null)
+                setComposerVideo(null)
+            } else {
+                setPublishError(error)
+                alert(`Ошибка публикации: ${error}`)
+            }
+        } catch (e: any) {
+            setPublishError(e.message || 'Неизвестная ошибка')
+            alert(`Ошибка публикации: ${e.message}`)
         }
         setPublishing(false)
     }
@@ -249,6 +257,9 @@ export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
                                     {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Пост'}
                                 </button>
                             </div>
+                            {publishError && (
+                                <p className="text-red-400 text-[12px] mt-1">⚠️ {publishError}</p>
+                            )}
                         </div>
                     </div>
                 </div>
