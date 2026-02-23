@@ -55,10 +55,12 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     try {
       const supabase = createClient()
 
-      const { data: swipedData } = await supabase
+      const { data: swipedData, error: swipeReadErr } = await supabase
         .from('swipes')
         .select('swiped_id, action, created_at')
         .eq('swiper_id', userId)
+
+      console.log('[match] fetchCards – swipes read:', { count: swipedData?.length ?? 0, error: swipeReadErr?.message ?? null })
 
       const twoDaysAgo = new Date(Date.now() - 2 * 24 * 3600000)
       const excluded = (swipedData ?? [])
