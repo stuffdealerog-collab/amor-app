@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Trash2, Copy, Plus, RefreshCw, Shield } from 'lucide-react'
 
 // Hardcoded admin emails — only these users can access this page
-const ADMIN_EMAILS = ['zeleniygorodok7@gmail.com']
+const ADMIN_EMAILS = ['stuffdealerog@gmail.com']
 
 interface PromoCode {
     id: string
