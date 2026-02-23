@@ -292,7 +292,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
               targetUserId: chat.otherUser.id,
               title: `Сообщение от ${myName} 💬`,
               body: clean,
-              url: "/chat"
+              url: "/"
             }
           }).catch(err => console.warn('[push] failed chat push:', err))
         }
@@ -331,7 +331,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
             targetUserId: chat.otherUser.id,
             title: `Фото от ${myName} 📷`,
             body: 'Пользователь отправил вам фото!',
-            url: "/chat"
+            url: "/"
           }
         }).catch(err => console.warn('[push] failed chat push:', err))
       }
@@ -370,7 +370,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
             targetUserId: chat.otherUser.id,
             title: `Голосовое от ${myName} 🎤`,
             body: 'Пользователь отправил вам голосовое сообщение!',
-            url: "/chat"
+            url: "/"
           }
         }).catch(err => console.warn('[push] failed chat push:', err))
       }

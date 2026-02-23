@@ -177,7 +177,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
                 targetUserId: swipedId,
                 title: "Взаимный Мэтч! 💖",
                 body: "У вас совпадение вайба! Напишите первое сообщение 💌",
-                url: "/chat"
+                url: "/"
               }
             }).catch(err => console.warn('[push] failed to send match push:', err))
           }
