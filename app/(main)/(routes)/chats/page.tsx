@@ -14,9 +14,5 @@ export default function ChatsPage() {
         closeChat()
     }, [closeChat])
 
-    return (
-        <div className="h-full">
-            <ChatScreen onOpenQuests={() => ui.setShowQuests(true)} />
-        </div>
-    )
+    return <ChatScreen onOpenQuests={() => ui.setShowQuests(true)} />
 }

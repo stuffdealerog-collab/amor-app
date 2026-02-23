@@ -147,7 +147,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         <div className={`relative mx-auto h-[100dvh] max-w-md bg-background flex flex-col pb-[var(--bottomnav-h)] overflow-hidden ${hasTopBar ? "pt-[var(--topbar-h)]" : ""}`}>
             <TopBar />
 
-            <main className="relative flex-1 overflow-x-hidden overflow-y-auto scroll-smooth w-full min-h-0">
+            <main className="relative flex flex-col flex-1 overflow-hidden w-full min-h-0">
                 {children}
             </main>
 

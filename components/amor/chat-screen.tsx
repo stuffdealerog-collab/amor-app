@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import Image from "next/image"
 import { Search, Sparkles, ChevronLeft, Send, Mic, Camera, ShieldCheck, Trophy, Loader2, Play, Pause, X, Check, CheckCheck, Music, ExternalLink, UserMinus } from "lucide-react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/lib/stores/auth"
 import { useChatStore } from "@/lib/stores/chat"
@@ -501,8 +502,8 @@ export function ChatScreen({ onOpenQuests }: ChatScreenProps) {
                 : c.lastMessage?.content || "Начните разговор!"
 
             return (
-              <button key={c.match.id} onClick={() => user && router.push(`/chats/${c.match.id}`)}
-                className="flex items-center gap-3 rounded-2xl p-2.5 active:bg-amor-surface-2 transition-all">
+              <Link key={c.match.id} href={`/chats/${c.match.id}`} prefetch={true}
+                className="flex items-center w-full gap-3 rounded-2xl p-2.5 active:bg-amor-surface-2 transition-all text-left">
                 <div className="relative shrink-0">
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amor-surface-2 text-base font-bold text-foreground border border-white/5 overflow-hidden">
                     {avatarSrc ? <Image src={avatarSrc} alt={displayName} width={48} height={48} className="object-cover w-full h-full" sizes="48px" loading="lazy" /> : <span>{displayName[0] ?? "?"}</span>}
@@ -527,7 +528,7 @@ export function ChatScreen({ onOpenQuests }: ChatScreenProps) {
                   </div>
                   <p className={cn("text-[12px] truncate pr-3", c.unreadCount > 0 ? "text-foreground font-medium" : "text-muted-foreground")}>{lastContent}</p>
                 </div>
-              </button>
+              </Link>
             )
           })}
         </div>

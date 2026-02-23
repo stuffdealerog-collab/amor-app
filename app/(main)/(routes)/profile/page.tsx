@@ -7,12 +7,10 @@ export default function ProfilePage() {
     const ui = useUIStore()
 
     return (
-        <div className="h-full">
-            <ProfileScreen
-                onOpenSettings={() => ui.setShowSettings(true)}
-                onOpenShop={() => ui.setShowShop(true)}
-                onOpenEdit={() => ui.setShowEditProfile(true)}
-            />
-        </div>
+        <ProfileScreen
+            onOpenSettings={() => ui.setShowSettings(true)}
+            onOpenShop={() => ui.setShowShop(true)}
+            onOpenEdit={() => ui.setShowEditProfile(true)}
+        />
     )
 }
