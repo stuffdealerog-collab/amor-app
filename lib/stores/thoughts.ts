@@ -5,8 +5,14 @@ import type { Database } from '@/lib/supabase/database.types'
 
 type Profile = Database['public']['Tables']['profiles']['Row']
 type Thought = Database['public']['Tables']['thoughts']['Row']
+export type ThoughtComment = Database['public']['Tables']['thought_comments']['Row']
 
 export interface ThoughtWithAuthor extends Thought {
+    author: Profile
+    isLikedByMe?: boolean
+}
+
+export interface ThoughtCommentWithAuthor extends ThoughtComment {
     author: Profile
     isLikedByMe?: boolean
 }
@@ -17,11 +23,20 @@ interface ThoughtsState {
     error: string | null
 
     fetchThoughts: (currentUserId?: string) => Promise<void>
-    createThought: (userId: string, content: string, imageUrl?: string) => Promise<{ error: string | null }>
+    fetchRecommendedThoughts: (currentUserId: string) => Promise<void>
+    createThought: (userId: string, content: string, imageUrl?: string, videoUrl?: string) => Promise<{ error: string | null }>
     deleteThought: (thoughtId: string) => Promise<{ error: string | null }>
     toggleLike: (thoughtId: string, userId: string) => Promise<void>
+    toggleDislike: (thoughtId: string, userId: string) => Promise<void>
+    viewThought: (thoughtId: string) => Promise<void>
     subscribeToThoughts: (currentUserId?: string) => void
     unsubscribeFromThoughts: () => void
+
+    // Comments & Hashtags
+    fetchComments: (thoughtId: string, currentUserId?: string) => Promise<ThoughtCommentWithAuthor[]>
+    createComment: (userId: string, thoughtId: string, content: string, parentId?: string) => Promise<{ error: string | null }>
+    toggleCommentLike: (commentId: string, userId: string) => Promise<{ isLiked: boolean, likesCount: number } | null>
+    searchHashtags: (query: string) => Promise<{ tag: string, usage_count: number }[]>
 }
 
 let thoughtsChannel: RealtimeChannel | null = null;
@@ -73,12 +88,56 @@ export const useThoughtsStore = create<ThoughtsState>()((set, get) => ({
         }
     },
 
-    createThought: async (userId, content, imageUrl) => {
+    fetchRecommendedThoughts: async (currentUserId) => {
+        set({ loading: true, error: null })
+        const supabase = createClient()
+
+        try {
+            const { data: recommendedData, error: recommendedError } = await supabase
+                .rpc('get_recommended_thoughts', { reader_id: currentUserId, p_limit: 50, p_offset: 0 })
+
+            if (recommendedError) throw recommendedError
+
+            // Fetch authors for recommended thoughts
+            const authorIds = [...new Set((recommendedData || []).map(r => r.user_id))]
+            const { data: authors } = await supabase.from('profiles').select('*').in('id', authorIds)
+            const authorMap = new Map((authors || []).map(a => [a.id, a]))
+
+            let formattedThoughts: ThoughtWithAuthor[] = (recommendedData as any[]).map(t => ({
+                ...t,
+                author: authorMap.get(t.user_id)
+            })).filter(t => t.author)
+
+            // Fetch likes for user
+            if (formattedThoughts.length > 0) {
+                const thoughtIds = formattedThoughts.map(t => t.id)
+                const { data: likesData } = await supabase
+                    .from('thought_likes')
+                    .select('thought_id')
+                    .eq('user_id', currentUserId)
+                    .in('thought_id', thoughtIds)
+
+                const likedSet = new Set(likesData?.map(l => l.thought_id) || [])
+                formattedThoughts = formattedThoughts.map(t => ({
+                    ...t,
+                    isLikedByMe: likedSet.has(t.id)
+                }))
+            }
+
+            set({ thoughts: formattedThoughts, loading: false })
+        } catch (err: any) {
+            console.error('Error fetching recommended thoughts:', err)
+            set({ error: err.message, loading: false })
+        }
+    },
+
+    createThought: async (userId, content, imageUrl, videoUrl) => {
         const supabase = createClient()
         const { error } = await supabase.from('thoughts').insert({
             user_id: userId,
             content,
-            image_url: imageUrl || null
+            image_url: imageUrl || null,
+            video_url: videoUrl || null
         })
         return { error: error?.message || null }
     },
@@ -117,7 +176,6 @@ export const useThoughtsStore = create<ThoughtsState>()((set, get) => ({
 
         if (isLiked) {
             const { error } = await supabase.from('thought_likes').delete().eq('thought_id', thoughtId).eq('user_id', userId)
-            // Revert if error (simple handler for now)
             if (error) {
                 set(state => ({
                     thoughts: state.thoughts.map(t => t.id === thoughtId ? { ...t, isLikedByMe: true, likes_count: t.likes_count + 1 } : t)
@@ -131,6 +189,21 @@ export const useThoughtsStore = create<ThoughtsState>()((set, get) => ({
                 }))
             }
         }
+    },
+
+    toggleDislike: async (thoughtId, userId) => {
+        const supabase = createClient()
+        // Optimistically remove it from feed usually, but for now just send dislike action
+        await supabase.from('thought_dislikes').insert({ thought_id: thoughtId, user_id: userId })
+        set(state => ({
+            thoughts: state.thoughts.filter(t => t.id !== thoughtId) // Hide from feed if disliked
+        }))
+    },
+
+    viewThought: async (thoughtId) => {
+        const supabase = createClient()
+        // Increment asynchronously
+        supabase.rpc('increment_thought_view', { p_thought_id: thoughtId }).then(() => { })
     },
 
     subscribeToThoughts: (currentUserId) => {
@@ -173,5 +246,76 @@ export const useThoughtsStore = create<ThoughtsState>()((set, get) => ({
             thoughtsChannel.unsubscribe()
             thoughtsChannel = null
         }
+    },
+
+    fetchComments: async (thoughtId, currentUserId) => {
+        const supabase = createClient()
+        const { data, error } = await supabase
+            .from('thought_comments')
+            .select(`*, author:profiles(*)`)
+            .eq('thought_id', thoughtId)
+            .order('created_at', { ascending: true })
+
+        if (error || !data) return []
+
+        let comments: ThoughtCommentWithAuthor[] = data as any[]
+        comments = comments.filter(c => c.author)
+
+        if (currentUserId && comments.length > 0) {
+            const commentIds = comments.map(c => c.id)
+            const { data: likesData } = await supabase
+                .from('thought_comment_likes')
+                .select('comment_id')
+                .eq('user_id', currentUserId)
+                .in('comment_id', commentIds)
+
+            const likedSet = new Set(likesData?.map(l => l.comment_id) || [])
+            comments = comments.map(c => ({
+                ...c,
+                isLikedByMe: likedSet.has(c.id)
+            }))
+        }
+
+        return comments
+    },
+
+    createComment: async (userId, thoughtId, content, parentId) => {
+        const supabase = createClient()
+        const { error } = await supabase.from('thought_comments').insert({
+            user_id: userId,
+            thought_id: thoughtId,
+            content,
+            parent_id: parentId || null
+        })
+        return { error: error?.message || null }
+    },
+
+    toggleCommentLike: async (commentId, userId) => {
+        const supabase = createClient()
+        // We do this server-side or via a simple fetch check since comments state might just be local to the modal component
+        const { data: existing } = await supabase.from('thought_comment_likes')
+            .select('*').eq('comment_id', commentId).eq('user_id', userId).single()
+
+        if (existing) {
+            await supabase.from('thought_comment_likes').delete()
+                .eq('comment_id', commentId).eq('user_id', userId)
+            // Need to return updated count (using dummy return here, usually component updates optimistic)
+            // A more robust way would be a realtime subscription on comments or optimistic state
+            return { isLiked: false, likesCount: 0 } // We'll let the UI handle the increment optimistic
+        } else {
+            await supabase.from('thought_comment_likes').insert({ comment_id: commentId, user_id: userId })
+            return { isLiked: true, likesCount: 1 }
+        }
+    },
+
+    searchHashtags: async (query) => {
+        if (!query || query.length < 1) return []
+        const supabase = createClient()
+        const { data } = await supabase.from('hashtags')
+            .select('tag, usage_count')
+            .ilike('tag', `${query}%`)
+            .order('usage_count', { ascending: false })
+            .limit(10)
+        return data || []
     }
 }))

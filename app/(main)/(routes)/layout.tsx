@@ -40,7 +40,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             router.replace("/login")
             return
         }
-        if (profileLoaded && profile && !profile.onboarding_completed) {
+        if (profileLoaded && (!profile || !profile.onboarding_completed)) {
             router.replace("/onboarding")
         }
     }, [initialized, user, profileLoaded, profile, router])

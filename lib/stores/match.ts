@@ -131,10 +131,13 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       const supabase = createClient()
       const { error: swipeErr } = await supabase
         .from('swipes')
-        .insert({ swiper_id: swiperId, swiped_id: swipedId, action })
+        .upsert(
+          { swiper_id: swiperId, swiped_id: swipedId, action },
+          { onConflict: 'swiper_id,swiped_id' }
+        )
 
       if (swipeErr) {
-        console.warn('[match] swipe insert error:', swipeErr.message)
+        console.warn('[match] swipe upsert error:', swipeErr.message)
         return
       }
 

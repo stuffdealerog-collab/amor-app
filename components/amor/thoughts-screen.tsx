@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import Image from "next/image"
-import { Feather, Heart, MessageCircle, Image as ImageIcon, Send, Loader2, Sparkles, X, UserPlus, MoreHorizontal } from "lucide-react"
+import { Feather, Heart, MessageCircle, Image as ImageIcon, Video, Send, Loader2, Sparkles, X, UserPlus, MoreHorizontal, ThumbsDown, Eye } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/lib/stores/auth"
 import { useProfileStore } from "@/lib/stores/profile"
@@ -10,6 +10,7 @@ import { useThoughtsStore, ThoughtWithAuthor } from "@/lib/stores/thoughts"
 import { useMatchStore } from "@/lib/stores/match"
 import { createClient } from "@/lib/supabase/client"
 import { UserPreviewModal } from "@/components/amor/user-preview-modal"
+import { CommentsModal } from "@/components/amor/comments-modal"
 import type { Database } from "@/lib/supabase/database.types"
 
 type Profile = Database['public']['Tables']['profiles']['Row']
@@ -32,41 +33,57 @@ function formatTimeAgo(dateString: string): string {
 export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
     const { user } = useAuthStore()
     const { profile } = useProfileStore()
-    const { thoughts, loading, fetchThoughts, createThought, toggleLike, subscribeToThoughts, unsubscribeFromThoughts } = useThoughtsStore()
+    const { thoughts, loading, fetchThoughts, fetchRecommendedThoughts, createThought, toggleLike, toggleDislike, viewThought, subscribeToThoughts, unsubscribeFromThoughts, searchHashtags } = useThoughtsStore()
     const { swipe } = useMatchStore()
 
+    const [feedType, setFeedType] = useState<'recent' | 'foryou'>('recent')
     const [composerContent, setComposerContent] = useState("")
     const [composerImage, setComposerImage] = useState<string | null>(null)
-    const [uploadingImage, setUploadingImage] = useState(false)
+    const [composerVideo, setComposerVideo] = useState<string | null>(null)
+    const [uploadingMedia, setUploadingMedia] = useState(false)
     const [publishing, setPublishing] = useState(false)
     const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null)
+    const [selectedThoughtForComments, setSelectedThoughtForComments] = useState<string | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
+    // Hashtags
+    const [suggestedTags, setSuggestedTags] = useState<{ tag: string, usage_count: number }[]>([])
+    const [tagSearchTerm, setTagSearchTerm] = useState('')
+    const [cursorPosition, setCursorPosition] = useState(0)
+
     useEffect(() => {
-        fetchThoughts(user?.id)
-        subscribeToThoughts(user?.id)
+        if (!user) return
+        if (feedType === 'recent') {
+            fetchThoughts(user.id)
+        } else {
+            fetchRecommendedThoughts(user.id)
+        }
+
+        subscribeToThoughts(user.id)
         return () => unsubscribeFromThoughts()
-    }, [user?.id, fetchThoughts, subscribeToThoughts, unsubscribeFromThoughts])
+    }, [user?.id, feedType, fetchThoughts, fetchRecommendedThoughts, subscribeToThoughts, unsubscribeFromThoughts])
 
     const handlePublish = async () => {
-        if (!user || (!composerContent.trim() && !composerImage)) return
+        if (!user || (!composerContent.trim() && !composerImage && !composerVideo)) return
         setPublishing(true)
 
-        const { error } = await createThought(user.id, composerContent.trim(), composerImage || undefined)
+        const { error } = await createThought(user.id, composerContent.trim(), composerImage || undefined, composerVideo || undefined)
         if (!error) {
             setComposerContent("")
             setComposerImage(null)
+            setComposerVideo(null)
         } else {
             console.error(error)
         }
         setPublishing(false)
     }
 
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!user || !e.target.files || e.target.files.length === 0) return
         const file = e.target.files[0]
+        const isVideo = file.type.startsWith('video/')
 
-        setUploadingImage(true)
+        setUploadingMedia(true)
         const supabase = createClient()
         const fileName = `${user.id}/${Date.now()}_${file.name}`
 
@@ -74,21 +91,70 @@ export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
 
         if (!error && data) {
             const { data: { publicUrl } } = supabase.storage.from("chat_media").getPublicUrl(data.path)
-            setComposerImage(publicUrl)
+            if (isVideo) setComposerVideo(publicUrl)
+            else setComposerImage(publicUrl)
         }
 
-        setUploadingImage(false)
+        setUploadingMedia(false)
+    }
+
+    const handleTextChange = async (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const val = e.target.value
+        setComposerContent(val)
+
+        const cursor = e.target.selectionStart
+        setCursorPosition(cursor)
+
+        // Find current word
+        const textBeforeCursor = val.slice(0, cursor)
+        const words = textBeforeCursor.split(/\s/)
+        const currentWord = words[words.length - 1]
+
+        if (currentWord.startsWith('#') && currentWord.length > 1) {
+            const term = currentWord.slice(1).toLowerCase()
+            setTagSearchTerm(term)
+            const tags = await searchHashtags(term)
+            setSuggestedTags(tags)
+        } else {
+            setSuggestedTags([])
+            setTagSearchTerm('')
+        }
+    }
+
+    const insertHashtag = (tag: string) => {
+        const textBeforeCursor = composerContent.slice(0, cursorPosition)
+        const textAfterCursor = composerContent.slice(cursorPosition)
+        const wordsBefore = textBeforeCursor.split(/\s/)
+        wordsBefore.pop() // remove partial tag
+        const newTextBefore = (wordsBefore.length > 0 ? wordsBefore.join(' ') + ' ' : '') + `#${tag} `
+
+        setComposerContent(newTextBefore + textAfterCursor)
+        setSuggestedTags([])
     }
 
     return (
         <div className="flex-1 flex flex-col w-full h-full pb-20 overflow-hidden">
 
             {/* Header */}
-            <div className="px-4 pt-12 pb-3 sticky top-0 z-20 bg-background/80 backdrop-blur-xl border-b border-white/5">
+            <div className="px-4 pt-2 pb-3 sticky top-0 z-20 bg-background/80 backdrop-blur-xl border-b border-white/5">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Feather className="h-5 w-5 text-amor-pink" />
                         <h1 className="text-xl font-black text-foreground">Мысли</h1>
+                    </div>
+                    <div className="flex bg-amor-surface-2 rounded-full p-1">
+                        <button
+                            className={cn("px-4 py-1.5 rounded-full text-[13px] font-medium transition-colors cursor-pointer", feedType === 'recent' ? "bg-white/10 text-white" : "text-muted-foreground hover:text-white")}
+                            onClick={() => setFeedType('recent')}
+                        >
+                            Свежее
+                        </button>
+                        <button
+                            className={cn("px-4 py-1.5 rounded-full text-[13px] font-medium transition-colors cursor-pointer", feedType === 'foryou' ? "bg-white/10 text-white" : "text-muted-foreground hover:text-white")}
+                            onClick={() => setFeedType('foryou')}
+                        >
+                            Рекомендации
+                        </button>
                     </div>
                 </div>
             </div>
@@ -110,14 +176,29 @@ export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
                             </div>
                         </div>
 
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 relative">
                             <textarea
                                 value={composerContent}
-                                onChange={e => setComposerContent(e.target.value)}
-                                placeholder="Что нового?"
+                                onChange={handleTextChange}
+                                placeholder="Что нового (используйте #хэштеги)?"
                                 className="w-full min-h-[60px] bg-transparent text-[15px] resize-none focus:outline-none placeholder:text-muted-foreground"
                                 maxLength={300}
                             />
+
+                            {suggestedTags.length > 0 && (
+                                <div className="absolute z-30 w-full max-w-[200px] mt-1 top-full left-0 bg-amor-surface-2 border border-white/10 rounded-xl overflow-hidden shadow-2xl">
+                                    {suggestedTags.map(tag => (
+                                        <button
+                                            key={tag.tag}
+                                            onClick={() => insertHashtag(tag.tag)}
+                                            className="w-full text-left px-3 py-2 hover:bg-white/5 flex items-center justify-between"
+                                        >
+                                            <span className="text-[14px] text-white">#{tag.tag}</span>
+                                            <span className="text-[11px] text-muted-foreground">{tag.usage_count}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
 
                             {composerImage && (
                                 <div className="relative mt-2 mb-3 rounded-2xl overflow-hidden glass border border-white/10 w-full max-w-[200px] aspect-[4/5] group">
@@ -131,26 +212,38 @@ export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
                                 </div>
                             )}
 
+                            {composerVideo && (
+                                <div className="relative mt-2 mb-3 rounded-2xl overflow-hidden glass border border-white/10 w-full max-w-[200px] aspect-[4/5] group">
+                                    <video src={composerVideo} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+                                    <button
+                                        onClick={() => setComposerVideo(null)}
+                                        className="absolute top-2 right-2 h-7 w-7 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            )}
+
                             <div className="flex items-center justify-between mt-1">
                                 <input
                                     type="file"
-                                    accept="image/*"
+                                    accept="image/*,video/*"
                                     className="hidden"
                                     ref={fileInputRef}
-                                    onChange={handleImageUpload}
-                                    disabled={uploadingImage || publishing}
+                                    onChange={handleMediaUpload}
+                                    disabled={uploadingMedia || publishing}
                                 />
                                 <button
                                     onClick={() => fileInputRef.current?.click()}
-                                    disabled={uploadingImage || publishing}
+                                    disabled={uploadingMedia || publishing || !!composerImage || !!composerVideo}
                                     className="p-2 h-9 w-9 rounded-full hover:bg-white/5 text-amor-pink active:scale-95 transition-all flex items-center justify-center disabled:opacity-50"
                                 >
-                                    {uploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
+                                    {uploadingMedia ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
                                 </button>
 
                                 <button
                                     onClick={handlePublish}
-                                    disabled={(!composerContent.trim() && !composerImage) || publishing || uploadingImage}
+                                    disabled={(!composerContent.trim() && !composerImage && !composerVideo) || publishing || uploadingMedia}
                                     className="px-4 py-1.5 h-8 bg-amor-pink text-white text-[13px] font-bold rounded-full disabled:opacity-50 active:scale-95 transition-all flex items-center gap-1.5"
                                 >
                                     {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Пост'}
@@ -178,6 +271,7 @@ export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
                                     if (onOpenProfile) onOpenProfile(thought.author)
                                     else setSelectedProfile(thought.author)
                                 }}
+                                onOpenComments={() => setSelectedThoughtForComments(thought.id)}
                             />
                         ))}
                     </div>
@@ -188,8 +282,22 @@ export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
             {selectedProfile && (
                 <UserPreviewModal user={selectedProfile} onClose={() => setSelectedProfile(null)} />
             )}
+
+            {selectedThoughtForComments && (
+                <CommentsModal thoughtId={selectedThoughtForComments} onClose={() => setSelectedThoughtForComments(null)} />
+            )}
         </div>
     )
+}
+
+function renderContentWithHashtags(content: string) {
+    const parts = content.split(/(#[a-zA-Zа-яА-Я0-9_]+)/g);
+    return parts.map((part, i) => {
+        if (part.startsWith('#')) {
+            return <span key={i} className="text-amor-pink font-medium cursor-pointer hover:underline">{part}</span>
+        }
+        return part
+    })
 }
 
 function ThoughtCard({
@@ -197,16 +305,24 @@ function ThoughtCard({
     currentUserId,
     onLike,
     onRequestMatch,
-    onOpenProfile
+    onOpenProfile,
+    onOpenComments
 }: {
     thought: ThoughtWithAuthor,
     currentUserId?: string,
     onLike: () => void,
     onRequestMatch: () => void,
-    onOpenProfile: () => void
+    onOpenProfile: () => void,
+    onOpenComments: () => void
 }) {
+    const { toggleDislike, viewThought } = useThoughtsStore()
     const isMe = thought.user_id === currentUserId;
     const authorPhoto = thought.author.avatar_url || thought.author.photos?.[0]
+
+    useEffect(() => {
+        // Increment view count optimistically when component mounts
+        viewThought(thought.id)
+    }, [thought.id, viewThought])
 
     return (
         <div className="p-4 flex gap-3 anim-fade-in hover:bg-white/[0.02] transition-colors cursor-pointer" onClick={onOpenProfile}>
@@ -240,7 +356,7 @@ function ThoughtCard({
                 </div>
 
                 <p className="text-[14px] text-foreground/90 whitespace-pre-wrap break-words mb-2.5">
-                    {thought.content}
+                    {renderContentWithHashtags(thought.content)}
                 </p>
 
                 {thought.image_url && (
@@ -249,7 +365,13 @@ function ThoughtCard({
                     </div>
                 )}
 
-                <div className="flex items-center justify-between mt-1 max-w-[200px]" onClick={e => e.stopPropagation()}>
+                {thought.video_url && (
+                    <div className="relative w-full max-w-[260px] aspect-[4/5] rounded-2xl overflow-hidden glass border border-white/5 mb-3">
+                        <video src={thought.video_url} controls playsInline className="w-full h-full object-cover" />
+                    </div>
+                )}
+
+                <div className="flex items-center gap-4 mt-1" onClick={e => e.stopPropagation()}>
                     <button
                         onClick={onLike}
                         className={cn(
@@ -261,9 +383,26 @@ function ThoughtCard({
                         {thought.likes_count > 0 && <span className="text-[11px] font-bold">{thought.likes_count}</span>}
                     </button>
 
+                    <button
+                        onClick={() => {
+                            if (currentUserId) toggleDislike(thought.id, currentUserId)
+                        }}
+                        className="flex items-center gap-1.5 h-8 px-2 rounded-full text-muted-foreground hover:bg-white/5 transition-all active:scale-90"
+                    >
+                        <ThumbsDown className="h-4 w-4" />
+                        <span className="text-[11px] font-bold">{thought.dislikes_count > 0 ? thought.dislikes_count : ''}</span>
+                    </button>
+
                     <button className="flex items-center gap-1.5 h-8 px-2 rounded-full text-muted-foreground hover:bg-white/5 transition-all active:scale-90">
                         <MessageCircle className="h-4 w-4" />
                     </button>
+
+                    <div className="flex items-center gap-1.5 h-8 px-2 text-muted-foreground opacity-70">
+                        <Eye className="h-4 w-4" />
+                        <span className="text-[11px]">{thought.views_count}</span>
+                    </div>
+
+                    <div className="flex-1" />
 
                     {!isMe && (
                         <button

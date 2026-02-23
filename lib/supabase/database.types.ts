@@ -168,13 +168,18 @@ export interface Database {
           user_id: string
           content: string
           image_url: string | null
+          video_url: string | null
           likes_count: number
+          views_count: number
+          dislikes_count: number
           created_at: string
         }
-        Insert: Omit<Database['public']['Tables']['thoughts']['Row'], 'id' | 'created_at' | 'likes_count'> & {
+        Insert: Omit<Database['public']['Tables']['thoughts']['Row'], 'id' | 'created_at' | 'likes_count' | 'views_count' | 'dislikes_count'> & {
           id?: string
           created_at?: string
           likes_count?: number
+          views_count?: number
+          dislikes_count?: number
         }
         Update: Partial<Database['public']['Tables']['thoughts']['Insert']>
         Relationships: [
@@ -208,6 +213,128 @@ export interface Database {
             columns: ["user_id"]
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          }
+        ]
+      }
+      thought_dislikes: {
+        Row: {
+          thought_id: string
+          user_id: string
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['thought_dislikes']['Row'], 'created_at'> & {
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['thought_dislikes']['Insert']>
+        Relationships: [
+          {
+            foreignKeyName: "thought_dislikes_thought_id_fkey"
+            columns: ["thought_id"]
+            referencedRelation: "thoughts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thought_dislikes_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      thought_comments: {
+        Row: {
+          id: string
+          thought_id: string
+          user_id: string
+          parent_id: string | null
+          content: string
+          likes_count: number
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['thought_comments']['Row'], 'id' | 'created_at' | 'likes_count'> & {
+          id?: string
+          created_at?: string
+          likes_count?: number
+        }
+        Update: Partial<Database['public']['Tables']['thought_comments']['Insert']>
+        Relationships: [
+          {
+            foreignKeyName: "thought_comments_thought_id_fkey"
+            columns: ["thought_id"]
+            referencedRelation: "thoughts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thought_comments_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thought_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            referencedRelation: "thought_comments"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      thought_comment_likes: {
+        Row: {
+          comment_id: string
+          user_id: string
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['thought_comment_likes']['Row'], 'created_at'> & {
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['thought_comment_likes']['Insert']>
+        Relationships: [
+          {
+            foreignKeyName: "thought_comment_likes_comment_id_fkey"
+            columns: ["comment_id"]
+            referencedRelation: "thought_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thought_comment_likes_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      hashtags: {
+        Row: {
+          tag: string
+          usage_count: number
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['hashtags']['Row'], 'created_at' | 'usage_count'> & {
+          created_at?: string
+          usage_count?: number
+        }
+        Update: Partial<Database['public']['Tables']['hashtags']['Insert']>
+        Relationships: []
+      }
+      thought_hashtags: {
+        Row: {
+          thought_id: string
+          tag: string
+        }
+        Insert: Database['public']['Tables']['thought_hashtags']['Row']
+        Update: Partial<Database['public']['Tables']['thought_hashtags']['Insert']>
+        Relationships: [
+          {
+            foreignKeyName: "thought_hashtags_thought_id_fkey"
+            columns: ["thought_id"]
+            referencedRelation: "thoughts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "thought_hashtags_tag_fkey"
+            columns: ["tag"]
+            referencedRelation: "hashtags"
+            referencedColumns: ["tag"]
           }
         ]
       }
@@ -369,6 +496,25 @@ export interface Database {
       redeem_promo: {
         Args: { p_user_id: string; p_code: string }
         Returns: { success: boolean; message: string; type?: string; value?: string; balance?: number }
+      }
+      get_recommended_thoughts: {
+        Args: { reader_id: string; p_limit?: number; p_offset?: number }
+        Returns: {
+          id: string
+          user_id: string
+          content: string
+          image_url: string | null
+          video_url: string | null
+          likes_count: number
+          dislikes_count: number
+          views_count: number
+          created_at: string
+          score: number
+        }[]
+      }
+      increment_thought_view: {
+        Args: { p_thought_id: string }
+        Returns: undefined
       }
       delete_user_account: {
         Args: { target_user_id: string }
