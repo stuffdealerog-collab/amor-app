@@ -16,6 +16,8 @@ export interface ThoughtWithAuthor extends Thought {
 export interface ThoughtCommentWithAuthor extends ThoughtComment {
     author: Profile
     isLikedByMe?: boolean
+    isAuthorLiked?: boolean
+    is_pinned?: boolean
 }
 
 interface ThoughtsState {
@@ -35,10 +37,11 @@ interface ThoughtsState {
     unsubscribeFromThoughts: () => void
 
     // Comments & Hashtags
-    fetchComments: (thoughtId: string, currentUserId?: string) => Promise<ThoughtCommentWithAuthor[]>
+    fetchComments: (thoughtId: string, currentUserId?: string, thoughtAuthorId?: string) => Promise<ThoughtCommentWithAuthor[]>
     createComment: (userId: string, thoughtId: string, content: string, parentId?: string) => Promise<{ error: string | null }>
     toggleCommentLike: (commentId: string, userId: string) => Promise<{ isLiked: boolean, likesCount: number } | null>
     searchHashtags: (query: string) => Promise<{ tag: string, usage_count: number }[]>
+    pinComment: (commentId: string, pinned: boolean) => Promise<{ error: string | null }>
 }
 
 let thoughtsChannel: RealtimeChannel | null = null;
@@ -293,7 +296,7 @@ export const useThoughtsStore = create<ThoughtsState>()((set, get) => ({
         }
     },
 
-    fetchComments: async (thoughtId, currentUserId) => {
+    fetchComments: async (thoughtId, currentUserId, thoughtAuthorId) => {
         const supabase = createClient()
         const { data, error } = await supabase
             .from('thought_comments')
@@ -306,19 +309,30 @@ export const useThoughtsStore = create<ThoughtsState>()((set, get) => ({
         let comments: ThoughtCommentWithAuthor[] = data as any[]
         comments = comments.filter(c => c.author)
 
-        if (currentUserId && comments.length > 0) {
+        if (comments.length > 0) {
             const commentIds = comments.map(c => c.id)
-            const { data: likesData } = await supabase
-                .from('thought_comment_likes')
-                .select('comment_id')
-                .eq('user_id', currentUserId)
-                .in('comment_id', commentIds)
 
-            const likedSet = new Set(likesData?.map(l => l.comment_id) || [])
-            comments = comments.map(c => ({
-                ...c,
-                isLikedByMe: likedSet.has(c.id)
-            }))
+            // Fetch current user likes
+            if (currentUserId) {
+                const { data: likesData } = await supabase
+                    .from('thought_comment_likes')
+                    .select('comment_id')
+                    .eq('user_id', currentUserId)
+                    .in('comment_id', commentIds)
+                const likedSet = new Set(likesData?.map(l => l.comment_id) || [])
+                comments = comments.map(c => ({ ...c, isLikedByMe: likedSet.has(c.id) }))
+            }
+
+            // Fetch author likes (to show "❤️ Автор" badge)
+            if (thoughtAuthorId) {
+                const { data: authorLikes } = await supabase
+                    .from('thought_comment_likes')
+                    .select('comment_id')
+                    .eq('user_id', thoughtAuthorId)
+                    .in('comment_id', commentIds)
+                const authorLikedSet = new Set(authorLikes?.map(l => l.comment_id) || [])
+                comments = comments.map(c => ({ ...c, isAuthorLiked: authorLikedSet.has(c.id) }))
+            }
         }
 
         return comments
@@ -362,5 +376,14 @@ export const useThoughtsStore = create<ThoughtsState>()((set, get) => ({
             .order('usage_count', { ascending: false })
             .limit(10)
         return data || []
+    },
+
+    pinComment: async (commentId, pinned) => {
+        const supabase = createClient()
+        const { error } = await supabase
+            .from('thought_comments')
+            .update({ is_pinned: pinned } as any)
+            .eq('id', commentId)
+        return { error: error?.message || null }
     }
 }))
