@@ -97,13 +97,13 @@ export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
             const ext = file.name.split('.').pop() || 'jpg'
             const fileName = `thoughts/${user.id}/${Date.now()}.${ext}`
 
-            const { data, error } = await supabase.storage.from('chat_media').upload(fileName, file, { upsert: true })
+            const { data, error } = await supabase.storage.from('chat-media').upload(fileName, file, { upsert: true })
 
             if (error) {
                 console.error('[thoughts] upload error:', error)
                 alert(`Ошибка загрузки: ${error.message}`)
             } else if (data) {
-                const { data: { publicUrl } } = supabase.storage.from('chat_media').getPublicUrl(data.path)
+                const { data: { publicUrl } } = supabase.storage.from('chat-media').getPublicUrl(data.path)
                 if (isVideo) setComposerVideo(publicUrl)
                 else setComposerImage(publicUrl)
             }
