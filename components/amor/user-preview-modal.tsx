@@ -29,7 +29,15 @@ export function UserPreviewModal({ user: u, onClose }: { user: Profile; onClose:
 
     return (
         <div className="fixed inset-0 z-[150] flex flex-col bg-background anim-slide-up">
-            <div className="flex items-center justify-between px-4 pb-3 shrink-0" style={{ paddingTop: "calc(var(--sat) + 16px)" }}>
+            {/* Banner background */}
+            {u.banner_url && (
+                <div className="absolute inset-x-0 top-0 h-56 z-0">
+                    <Image src={u.banner_url} alt="" fill className="object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background" />
+                </div>
+            )}
+
+            <div className="flex items-center justify-between px-4 pb-3 shrink-0 relative z-10" style={{ paddingTop: "calc(var(--sat) + 16px)" }}>
                 <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-xl glass active:scale-95 transition-all">
                     <ChevronLeft className="h-[18px] w-[18px] text-foreground" />
                 </button>
@@ -37,7 +45,7 @@ export function UserPreviewModal({ user: u, onClose }: { user: Profile; onClose:
                 <div className="w-9" />
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 pb-8">
+            <div className="flex-1 overflow-y-auto px-4 pb-8 relative z-10">
                 {photos.length > 0 ? (
                     <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-4" onClick={() => setPhotoIdx(i => (i + 1) % photos.length)}>
                         <Image src={photos[photoIdx]} alt={u.name} fill className="object-cover" sizes="320px" />
