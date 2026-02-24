@@ -91,7 +91,6 @@ export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
             const img = new window.Image()
             img.onload = () => {
                 let { width, height } = img
-                // Scale down if larger than maxSize
                 if (width > maxSize || height > maxSize) {
                     const ratio = Math.min(maxSize / width, maxSize / height)
                     width = Math.round(width * ratio)
@@ -113,6 +112,84 @@ export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
         })
     }
 
+    const compressVideo = (file: File, maxDuration = 30, maxHeight = 720, bitrate = 1_000_000): Promise<Blob> => {
+        return new Promise((resolve, reject) => {
+            const video = document.createElement('video')
+            video.muted = true
+            video.playsInline = true
+            video.preload = 'auto'
+
+            video.onloadedmetadata = () => {
+                // Scale down
+                let { videoWidth: w, videoHeight: h } = video
+                if (h > maxHeight) {
+                    const ratio = maxHeight / h
+                    w = Math.round(w * ratio)
+                    h = Math.round(h * ratio)
+                }
+                // Ensure even dimensions (required by some codecs)
+                w = w % 2 === 0 ? w : w + 1
+                h = h % 2 === 0 ? h : h + 1
+
+                const canvas = document.createElement('canvas')
+                canvas.width = w
+                canvas.height = h
+                const ctx = canvas.getContext('2d')!
+
+                const stream = canvas.captureStream(24) // 24fps
+
+                // Try to add audio track
+                try {
+                    const audioCtx = new AudioContext()
+                    const source = audioCtx.createMediaElementSource(video)
+                    const dest = audioCtx.createMediaStreamDestination()
+                    source.connect(dest)
+                    source.connect(audioCtx.destination)
+                    dest.stream.getAudioTracks().forEach(t => stream.addTrack(t))
+                } catch { /* no audio — ok */ }
+
+                const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+                    ? 'video/webm;codecs=vp9'
+                    : MediaRecorder.isTypeSupported('video/webm')
+                        ? 'video/webm'
+                        : 'video/mp4'
+
+                const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: bitrate })
+                const chunks: Blob[] = []
+
+                recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data) }
+                recorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: mimeType.split(';')[0] })
+                    resolve(blob)
+                }
+                recorder.onerror = () => reject(new Error('Video compression failed'))
+
+                // Limit duration
+                const duration = Math.min(video.duration, maxDuration)
+
+                const drawFrame = () => {
+                    if (video.paused || video.ended || video.currentTime >= duration) {
+                        recorder.stop()
+                        video.pause()
+                        return
+                    }
+                    ctx.drawImage(video, 0, 0, w, h)
+                    requestAnimationFrame(drawFrame)
+                }
+
+                video.currentTime = 0
+                video.oncanplay = () => {
+                    recorder.start()
+                    video.play()
+                    drawFrame()
+                }
+            }
+
+            video.onerror = () => reject(new Error('Failed to load video'))
+            video.src = URL.createObjectURL(file)
+        })
+    }
+
     const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!user || !e.target.files || e.target.files.length === 0) return
         const file = e.target.files[0]
@@ -123,21 +200,41 @@ export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
             const supabase = createClient()
             let uploadFile: File | Blob = file
             let ext = file.name.split('.').pop() || 'jpg'
+            let contentType = file.type
 
-            // Compress images client-side (skip videos)
             if (!isVideo && file.type.startsWith('image/')) {
+                // Compress image
                 const originalKB = Math.round(file.size / 1024)
                 uploadFile = await compressImage(file)
                 ext = 'webp'
+                contentType = 'image/webp'
                 const compressedKB = Math.round(uploadFile.size / 1024)
-                console.log(`[thoughts] image compressed: ${originalKB}KB → ${compressedKB}KB (${Math.round((1 - compressedKB / originalKB) * 100)}% saved)`)
+                console.log(`[thoughts] image: ${originalKB}KB → ${compressedKB}KB (${Math.round((1 - compressedKB / originalKB) * 100)}% saved)`)
+            } else if (isVideo) {
+                // Compress video (max 30s, 720p, 1Mbps)
+                const originalMB = (file.size / 1024 / 1024).toFixed(1)
+                try {
+                    uploadFile = await compressVideo(file)
+                    ext = 'webm'
+                    contentType = 'video/webm'
+                    const compressedMB = (uploadFile.size / 1024 / 1024).toFixed(1)
+                    console.log(`[thoughts] video: ${originalMB}MB → ${compressedMB}MB`)
+                } catch (err) {
+                    console.warn('[thoughts] video compression not supported, uploading original:', err)
+                    // Fallback: upload original but enforce 50MB limit
+                    if (file.size > 50 * 1024 * 1024) {
+                        alert('Видео слишком большое (макс. 50MB)')
+                        setUploadingMedia(false)
+                        return
+                    }
+                }
             }
 
             const fileName = `${user.id}/${Date.now()}.${ext}`
 
             const { data, error } = await supabase.storage.from('thought-media').upload(fileName, uploadFile, {
                 upsert: true,
-                contentType: isVideo ? file.type : 'image/webp'
+                contentType
             })
 
             if (error) {
