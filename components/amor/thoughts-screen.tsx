@@ -424,7 +424,6 @@ export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
                                 }}
                             />
                         ))}
-                        <div className="h-20" />
                     </div>
                 )}
             </div>
