@@ -268,7 +268,7 @@ export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
 
     // ═════════════════ RENDER ═════════════════
     return (
-        <div className="flex-1 flex flex-col w-full h-full pb-20 overflow-hidden">
+        <div className="flex-1 flex flex-col w-full h-full overflow-hidden">
 
             {/* Header */}
             <div className="px-4 pt-2 pb-2 sticky top-0 z-20 bg-background/90 backdrop-blur-xl border-b border-white/[0.04]">
@@ -294,7 +294,7 @@ export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto w-full no-scrollbar">
+            <div className="flex-1 overflow-y-auto w-full no-scrollbar pb-20">
 
                 {/* Composer */}
                 <div className="px-4 py-3 border-b border-white/[0.04]">
