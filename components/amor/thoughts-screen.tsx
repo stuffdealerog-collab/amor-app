@@ -112,7 +112,7 @@ export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
         })
     }
 
-    const compressVideo = (file: File, maxDuration = 30, maxHeight = 720, bitrate = 1_000_000): Promise<Blob> => {
+    const compressVideo = (file: File, maxDuration = 60, maxHeight = 720, bitrate = 1_000_000): Promise<Blob> => {
         return new Promise((resolve, reject) => {
             const video = document.createElement('video')
             video.muted = true
