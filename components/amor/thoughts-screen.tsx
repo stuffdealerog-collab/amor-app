@@ -86,6 +86,33 @@ export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
         setPublishing(false)
     }
 
+    const compressImage = (file: File, maxSize = 1200, quality = 0.8): Promise<Blob> => {
+        return new Promise((resolve, reject) => {
+            const img = new window.Image()
+            img.onload = () => {
+                let { width, height } = img
+                // Scale down if larger than maxSize
+                if (width > maxSize || height > maxSize) {
+                    const ratio = Math.min(maxSize / width, maxSize / height)
+                    width = Math.round(width * ratio)
+                    height = Math.round(height * ratio)
+                }
+                const canvas = document.createElement('canvas')
+                canvas.width = width
+                canvas.height = height
+                const ctx = canvas.getContext('2d')!
+                ctx.drawImage(img, 0, 0, width, height)
+                canvas.toBlob(
+                    (blob) => blob ? resolve(blob) : reject(new Error('Compression failed')),
+                    'image/webp',
+                    quality
+                )
+            }
+            img.onerror = () => reject(new Error('Failed to load image'))
+            img.src = URL.createObjectURL(file)
+        })
+    }
+
     const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!user || !e.target.files || e.target.files.length === 0) return
         const file = e.target.files[0]
@@ -94,10 +121,24 @@ export function ThoughtsScreen({ onOpenProfile }: ThoughtsScreenProps) {
         setUploadingMedia(true)
         try {
             const supabase = createClient()
-            const ext = file.name.split('.').pop() || 'jpg'
-            const fileName = `thoughts/${user.id}/${Date.now()}.${ext}`
+            let uploadFile: File | Blob = file
+            let ext = file.name.split('.').pop() || 'jpg'
 
-            const { data, error } = await supabase.storage.from('thought-media').upload(fileName, file, { upsert: true })
+            // Compress images client-side (skip videos)
+            if (!isVideo && file.type.startsWith('image/')) {
+                const originalKB = Math.round(file.size / 1024)
+                uploadFile = await compressImage(file)
+                ext = 'webp'
+                const compressedKB = Math.round(uploadFile.size / 1024)
+                console.log(`[thoughts] image compressed: ${originalKB}KB → ${compressedKB}KB (${Math.round((1 - compressedKB / originalKB) * 100)}% saved)`)
+            }
+
+            const fileName = `${user.id}/${Date.now()}.${ext}`
+
+            const { data, error } = await supabase.storage.from('thought-media').upload(fileName, uploadFile, {
+                upsert: true,
+                contentType: isVideo ? file.type : 'image/webp'
+            })
 
             if (error) {
                 console.error('[thoughts] upload error:', error)
