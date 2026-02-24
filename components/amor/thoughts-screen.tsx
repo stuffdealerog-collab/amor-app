@@ -544,6 +544,7 @@ function ThoughtCard({
 
                     <button onClick={onOpenComments} className="flex items-center gap-1 h-7 px-2 rounded-full text-muted-foreground/50 hover:text-foreground/70 transition-all active:scale-90">
                         <MessageCircle className="h-3.5 w-3.5" />
+                        {(thought.comments_count ?? 0) > 0 && <span className="text-[10px] font-semibold">{thought.comments_count}</span>}
                     </button>
 
                     <div className="flex items-center gap-1 h-7 px-2 text-muted-foreground/25">

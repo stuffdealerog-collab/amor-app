@@ -10,6 +10,7 @@ export type ThoughtComment = Database['public']['Tables']['thought_comments']['R
 export interface ThoughtWithAuthor extends Thought {
     author: Profile
     isLikedByMe?: boolean
+    comments_count?: number
 }
 
 export interface ThoughtCommentWithAuthor extends ThoughtComment {
@@ -57,7 +58,8 @@ export const useThoughtsStore = create<ThoughtsState>()((set, get) => ({
                 .from('thoughts')
                 .select(`
           *,
-          author:profiles!thoughts_user_id_fkey(*)
+          author:profiles!thoughts_user_id_fkey(*),
+          thought_comments(count)
         `)
                 .order('created_at', { ascending: false })
                 .limit(50)
@@ -69,7 +71,10 @@ export const useThoughtsStore = create<ThoughtsState>()((set, get) => ({
 
             console.log('[thoughts] fetched:', thoughtsData?.length ?? 0, 'thoughts')
 
-            let formattedThoughts: ThoughtWithAuthor[] = (thoughtsData as any) || []
+            let formattedThoughts: ThoughtWithAuthor[] = ((thoughtsData as any) || []).map((t: any) => ({
+                ...t,
+                comments_count: t.thought_comments?.[0]?.count ?? 0,
+            }))
             formattedThoughts = formattedThoughts.filter(t => t.author)
 
             if (currentUserId && formattedThoughts.length > 0) {
