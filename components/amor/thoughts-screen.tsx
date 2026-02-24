@@ -525,8 +525,8 @@ function ThoughtCard({
                 </p>
 
                 {thought.image_url && (
-                    <div className="relative w-full aspect-[16/10] rounded-xl overflow-hidden border border-white/[0.06] mt-2">
-                        <Image src={thought.image_url} alt="Post" fill className="object-cover" />
+                    <div className="relative w-full rounded-xl overflow-hidden border border-white/[0.06] mt-2">
+                        <Image src={thought.image_url} alt="Post" width={600} height={400} className="w-full h-auto object-cover max-h-[400px]" />
                     </div>
                 )}
                 {thought.video_url && (
